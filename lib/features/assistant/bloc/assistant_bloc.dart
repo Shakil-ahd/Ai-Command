@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import '../domain/entities/chat_message.dart';
 import '../domain/repositories/context_repository.dart';
 import '../domain/usecases/get_installed_apps_usecase.dart';
@@ -6,6 +7,7 @@ import '../domain/usecases/process_command_usecase.dart';
 import '../services/speech_service.dart';
 import '../services/tts_service.dart';
 import 'assistant_event_state.dart';
+import '../domain/entities/contact_info.dart';
 import '../../../../core/utils/result.dart';
 
 class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
@@ -28,8 +30,11 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     on<VoiceRecordingStoppedEvent>(_onVoiceStopped);
     on<SpeechPartialResultEvent>(_onSpeechPartial);
     on<ContactSelectedEvent>(_onContactSelected);
+    on<CallEndedEvent>(_onCallEnded);
+    on<IncomingCallEvent>(_onIncomingCall);
     on<TtsToggledEvent>(_onTtsToggled);
     on<RefreshAppsEvent>(_onRefreshApps);
+    on<ClearNotificationEvent>(_onClearNotification);
     on<ClearChatHistoryEvent>(_onClearChatHistory);
     on<DeleteMessageEvent>(_onDeleteMessage);
   }
@@ -44,6 +49,17 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     final apps = result is Success ? (result as Success).data : [];
 
     speechService.initialize();
+
+    // Listen for call state from native
+    const MethodChannel('com.assistant/call_state')
+        .setMethodCallHandler((call) async {
+      if (call.method == 'onCallEnded') {
+        add(CallEndedEvent());
+      } else if (call.method == 'onIncomingCall') {
+        final callerName = call.arguments as String?;
+        add(IncomingCallEvent(callerName: callerName ?? 'Unknown'));
+      }
+    });
 
     List<ChatMessage> messages = await contextRepository.getMessages();
 
@@ -182,8 +198,61 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     ContactSelectedEvent event,
     Emitter<AssistantState> emit,
   ) async {
-    final command = 'call ${event.contact.phoneNumber}';
-    add(CommandSubmittedEvent(command));
+    final contact = event.contact;
+
+    // 1. Log the selection in chat
+    final userMsg = _makeUserMessage('Call ${contact.name}');
+    List<ChatMessage> updated = [...state.messages, userMsg];
+
+    emit(state.copyWith(
+      status: AssistantStatus.processing,
+      messages: updated,
+    ));
+    await contextRepository.saveMessages(updated);
+
+    // 2. Perform the direct call
+    try {
+      await processCommandUseCase.makeCallUseCase.callExact(contact);
+
+      final assistantMsg = _makeAssistantMessage('📞 Calling ${contact.name}…');
+      final finalMessages = [...updated, assistantMsg];
+
+      emit(state.copyWith(
+        status: AssistantStatus.idle,
+        messages: finalMessages,
+      ));
+      await contextRepository.saveMessages(finalMessages);
+
+      if (state.ttsEnabled) {
+        ttsService.speak('Calling ${contact.name}');
+      }
+    } catch (e) {
+      final errMsg = _makeAssistantMessage('⚠️ Error making call: $e');
+      final errMessages = [...updated, errMsg];
+      emit(state.copyWith(status: AssistantStatus.idle, messages: errMessages));
+    }
+  }
+
+  Future<void> _onCallEnded(
+    CallEndedEvent event,
+    Emitter<AssistantState> emit,
+  ) async {
+    final msg = _makeAssistantMessage('📞 Call Ended');
+    final updated = [...state.messages, msg];
+    emit(state.copyWith(messages: updated));
+    await contextRepository.saveMessages(updated);
+  }
+
+  Future<void> _onIncomingCall(
+    IncomingCallEvent event,
+    Emitter<AssistantState> emit,
+  ) async {
+    final callerText =
+        event.callerName.trim().isEmpty ? 'Unknown' : event.callerName;
+    final msg = _makeAssistantMessage('📲 Incoming Call from $callerText');
+    final updated = [...state.messages, msg];
+    emit(state.copyWith(messages: updated));
+    await contextRepository.saveMessages(updated);
   }
 
   void _onTtsToggled(
@@ -203,16 +272,19 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     final result = await getInstalledAppsUseCase();
     final apps =
         result is Success ? (result as Success).data : state.installedApps;
-    final msg = _makeAssistantMessage(
-        '🔄 App list refreshed! Found ${apps.length} apps.');
 
-    final updated = [...state.messages, msg];
     emit(state.copyWith(
       status: AssistantStatus.idle,
       installedApps: apps,
-      messages: updated,
+      notificationMessage: '🔄 App list refreshed! Found ${apps.length} apps.',
     ));
-    await contextRepository.saveMessages(updated);
+  }
+
+  void _onClearNotification(
+    ClearNotificationEvent event,
+    Emitter<AssistantState> emit,
+  ) {
+    emit(state.copyWith(clearNotification: true));
   }
 
   Future<void> _onDeleteMessage(
@@ -247,7 +319,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
       );
 
   ChatMessage _makeAssistantMessage(String text,
-          {List? contactChoices, bool shouldAnimate = false}) =>
+          {List<ContactInfo>? contactChoices, bool shouldAnimate = false}) =>
       ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString() +
             text.length.toString(),
@@ -255,6 +327,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
         sender: MessageSender.assistant,
         timestamp: DateTime.now(),
         shouldAnimate: shouldAnimate,
+        contactChoices: contactChoices,
       );
 
   @override

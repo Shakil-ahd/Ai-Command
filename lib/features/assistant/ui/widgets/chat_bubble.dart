@@ -3,7 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../bloc/assistant_bloc.dart';
+import '../../bloc/assistant_event_state.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/contact_info.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ChatBubble extends StatefulWidget {
   final ChatMessage message;
@@ -178,6 +182,8 @@ class _AssistantBubbleState extends State<_AssistantBubble> {
                     GoogleFonts.outfit(fontSize: 10, color: AppTheme.textHint),
               ),
             ),
+          if (_animationDone && widget.message.contactChoices != null)
+            _ContactChoicesList(choices: widget.message.contactChoices!),
         ],
       ),
     )
@@ -266,6 +272,58 @@ class _UserAvatar extends StatelessWidget {
       ),
       child: const Icon(Icons.person_rounded,
           color: AppTheme.accentColor, size: 18),
+    );
+  }
+}
+
+class _ContactChoicesList extends StatelessWidget {
+  final List<ContactInfo> choices;
+  const _ContactChoicesList({required this.choices});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        children: choices.map((c) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.bgSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+            ),
+            child: ListTile(
+              dense: true,
+              leading: CircleAvatar(
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                child: const Icon(Icons.person_rounded,
+                    color: AppTheme.primaryColor, size: 18),
+              ),
+              title: Text(
+                c.name,
+                style: GoogleFonts.outfit(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                ),
+              ),
+              subtitle: Text(
+                c.phoneNumber,
+                style: GoogleFonts.outfit(
+                  color: AppTheme.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+              trailing: Icon(Icons.call_rounded,
+                  color: AppTheme.successColor, size: 18),
+              onTap: () {
+                context.read<AssistantBloc>().add(ContactSelectedEvent(c));
+              },
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }

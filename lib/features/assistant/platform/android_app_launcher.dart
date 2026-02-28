@@ -63,4 +63,14 @@ class AndroidAppLauncher {
       return false;
     }
   }
+
+  Future<bool> directCall(String phoneNumber) async {
+    try {
+      return await _channel
+          .invokeMethod('directCall', {'phoneNumber': phoneNumber});
+    } catch (e) {
+      print('[AndroidAppLauncher] directCall error: $e');
+      return false;
+    }
+  }
 }

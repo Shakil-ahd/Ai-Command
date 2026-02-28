@@ -47,8 +47,18 @@ class MakeCallUseCase {
 
       final matches = _fuzzyMatcher.findContactMatches(contactName, contacts);
 
-      if (matches.isEmpty) {
+      // Check if the input is already a number
+      final isNumber = RegExp(r'^\+?[0-9]{5,}$')
+          .hasMatch(contactName.replaceAll(RegExp(r'[\s\-\(\)]'), ''));
+
+      if (matches.isEmpty && !isNumber) {
         return CallNotFound(contactName);
+      }
+
+      if (isNumber && (matches.isEmpty || matches.length > 1)) {
+        final number = contactName.replaceAll(RegExp(r'[^\d+]'), '');
+        await _contactRepository.makeCall(number);
+        return CallSuccess(ContactInfo(name: contactName, phoneNumber: number));
       }
 
       if (matches.length == 1) {
