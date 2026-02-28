@@ -1,0 +1,50 @@
+name: ai_assistant
+description: "Advanced AI-powered Android Assistant App with voice & text commands."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Styling
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.5.0
+  lottie: ^3.1.0
+
+  # State Management - BLoC
+  flutter_bloc: ^8.1.6
+  bloc: ^8.1.4
+  equatable: ^2.0.5
+
+  # Speech & TTS
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.0.2
+
+  # App Launcher / URL
+  url_launcher: ^6.3.1
+  android_intent_plus: ^5.1.0
+
+  # Contacts
+  flutter_contacts: ^1.1.9+2
+  permission_handler: ^11.3.1
+
+  # Utilities
+  get_it: ^7.7.0
+  shared_preferences: ^2.3.2
+  string_similarity: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
