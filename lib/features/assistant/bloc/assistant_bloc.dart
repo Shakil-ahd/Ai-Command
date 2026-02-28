@@ -50,20 +50,14 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     if (messages.isEmpty) {
       messages = [
         _makeAssistantMessage(
-          '👋 Hi, I am SakoAI, how can I help you?\n\n'
-          'Here are some tips on what you can ask me to do:\n\n'
-          '📱 Open apps (e.g. "open WhatsApp" or "ফেসবুক ওপেন করো")\n'
-          '📞 Call contacts (e.g. "call mom" or "বাবাকে কল করো")\n'
-          '🌐 Open websites (e.g. "open google.com")\n'
-          '▶️ Search YouTube (e.g. "search funny cats on youtube")\n'
-          '🔦 Control flashlight (e.g. "turn on flashlight" or "টর্চ জ্বালাও")\n'
-          '⚙️ Open Settings (e.g. "open wifi settings" or "ওয়াইফাই অন করো")\n'
-          '📷 Open Camera (e.g. "take a photo" or "ক্যামেরা ওপেন করো")\n\n'
-          'Tap the mic or type your command to get started!',
+          'Hi, I am SakoAI. How can I help you today?',
+          shouldAnimate: true,
         )
       ];
       await contextRepository.saveMessages(messages);
     }
+
+    await Future.delayed(const Duration(milliseconds: 1200));
 
     emit(state.copyWith(
       status: AssistantStatus.idle,
@@ -95,7 +89,6 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
 
       List<ChatMessage> finalMessages;
       if (response.clearChat) {
-        // Keep only the first welcome message
         final welcomeMsg =
             state.messages.isNotEmpty ? state.messages.first : assistantMsg;
         finalMessages = [welcomeMsg, assistantMsg];
@@ -154,8 +147,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     emit(state.copyWith(status: AssistantStatus.listening));
 
     await speechService.startListening(
-      localeId:
-          contextRepository.getPreferredLanguage() == 'bn' ? 'bn_BD' : 'en_US',
+      localeId: 'en_US',
       onResult: (text, isFinal) {
         if (isFinal && text.isNotEmpty) {
           add(CommandSubmittedEvent(text, isVoice: true));
@@ -240,7 +232,6 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
   ) async {
     if (state.messages.isEmpty) return;
 
-    // Keep only the first welcome message
     final welcomeMsg = state.messages.first;
     final updated = [welcomeMsg];
 
@@ -255,12 +246,15 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
         timestamp: DateTime.now(),
       );
 
-  ChatMessage _makeAssistantMessage(String text, {List? contactChoices}) =>
+  ChatMessage _makeAssistantMessage(String text,
+          {List? contactChoices, bool shouldAnimate = false}) =>
       ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: DateTime.now().millisecondsSinceEpoch.toString() +
+            text.length.toString(),
         text: text,
         sender: MessageSender.assistant,
         timestamp: DateTime.now(),
+        shouldAnimate: shouldAnimate,
       );
 
   @override

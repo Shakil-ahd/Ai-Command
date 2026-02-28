@@ -15,13 +15,11 @@ import 'core/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock orientation to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -31,27 +29,24 @@ void main() async {
     ),
   );
 
-  // Initialize service locator (dependency injection)
   await setupServiceLocator();
 
   final isFirstTime = !sl<ContextRepository>().isOnboardingCompleted();
 
-  runApp(AIAssistantApp(isFirstTime: isFirstTime));
+  runApp(SakoAIApp(isFirstTime: isFirstTime));
 }
 
-class AIAssistantApp extends StatelessWidget {
+class SakoAIApp extends StatelessWidget {
   final bool isFirstTime;
-  const AIAssistantApp({super.key, required this.isFirstTime});
+  const SakoAIApp({super.key, required this.isFirstTime});
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // Permission BLoC - handles runtime permissions
         BlocProvider<PermissionBloc>(
           create: (_) => sl<PermissionBloc>()..add(CheckPermissionsEvent()),
         ),
-        // Main Assistant BLoC - handles all assistant logic
         BlocProvider<AssistantBloc>(
           create: (_) => sl<AssistantBloc>()..add(AssistantInitializedEvent()),
         ),

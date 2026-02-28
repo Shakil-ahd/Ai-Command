@@ -11,21 +11,46 @@ class OpenUrlUseCase {
     try {
       String cleanUrl = url.trim();
 
-      // Ensure protocol prefix
-      if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      // Ensure protocol prefix, but allow custom schemes like spotify:
+      final hasScheme =
+          RegExp(r'^[a-z0-9]+:', caseSensitive: false).hasMatch(cleanUrl);
+      if (!hasScheme) {
         cleanUrl = 'https://$cleanUrl';
       }
 
       final uri = Uri.parse(cleanUrl);
-      final isYouTube = _isYouTubeUrl(uri);
+      final isYouTubeSearch = _isYouTubeSearchUrl(uri);
 
-      if (isYouTube) {
-        // Try YouTube native app first
-        final ytUri = Uri.parse(cleanUrl);
-        if (await canLaunchUrl(ytUri)) {
-          await launchUrl(ytUri,
-              mode: LaunchMode.externalNonBrowserApplication);
-          return const Success('Opened in YouTube');
+      if (isYouTubeSearch) {
+        // Build youtube:// deep link to open YouTube app directly
+        final query = uri.queryParameters['search_query'] ?? '';
+        if (query.isNotEmpty) {
+          final ytAppUri = Uri.parse(
+              'youtube://results?search_query=${Uri.encodeComponent(query)}');
+          if (await canLaunchUrl(ytAppUri)) {
+            await launchUrl(ytAppUri,
+                mode: LaunchMode.externalNonBrowserApplication);
+            return const Success('Opened in YouTube app');
+          }
+        }
+        // Fallback: open YouTube in browser
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          return Success('Opened YouTube in browser');
+        }
+        return Failure('Cannot open YouTube');
+      }
+
+      // For all other YouTube links (watch, etc.)
+      if (_isYouTubeUrl(uri)) {
+        final videoId = uri.queryParameters['v'];
+        if (videoId != null) {
+          final ytAppUri = Uri.parse('youtube://watch?v=$videoId');
+          if (await canLaunchUrl(ytAppUri)) {
+            await launchUrl(ytAppUri,
+                mode: LaunchMode.externalNonBrowserApplication);
+            return const Success('Opened in YouTube');
+          }
         }
       }
 
@@ -39,6 +64,12 @@ class OpenUrlUseCase {
     } catch (e) {
       return Failure('Error opening URL: $e', error: e);
     }
+  }
+
+  bool _isYouTubeSearchUrl(Uri uri) {
+    return (uri.host.contains('youtube.com') ||
+            uri.host.contains('m.youtube.com')) &&
+        uri.path.contains('/results');
   }
 
   bool _isYouTubeUrl(Uri uri) {

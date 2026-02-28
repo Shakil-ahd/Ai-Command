@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/di/service_locator.dart';
@@ -16,8 +17,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   final ContextRepository _contextRepository = sl<ContextRepository>();
-  int _currentPage = 0;
-  String _selectedLang = 'bn'; // 'bn' details to bangla since user prefers it
 
   @override
   void dispose() {
@@ -26,7 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _finishOnboarding() async {
-    await _contextRepository.setPreferredLanguage(_selectedLang);
+    await _contextRepository.setPreferredLanguage('en');
     await _contextRepository.setOnboardingCompleted(true);
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -39,130 +38,104 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bgDeep,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _finishOnboarding,
-                child: Text('Skip',
-                    style: GoogleFonts.outfit(color: AppTheme.textSecondary)),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppTheme.bgDeep,
+              AppTheme.bgDeep.withBlue(40),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: _finishOnboarding,
+                  child: Text('Skip',
+                      style: GoogleFonts.outfit(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      )),
+                ),
+              ).animate().fadeIn(delay: 500.ms),
+              Expanded(
+                child: _buildPage(
+                  title: 'Meet SakoAI',
+                  description:
+                      'Your powerful voice assistant for everything.\n\n'
+                      '• Open Apps & Calls\n'
+                      '• Play Music & YouTube\n'
+                      '• Control Flashlight & Settings\n'
+                      '• Smart Command Search\n',
+                ),
               ),
-            ),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (idx) {
-                  setState(() {
-                    _currentPage = idx;
-                  });
-                },
-                children: [
-                  _buildPage(
-                    title: 'Welcome to SakoAI',
-                    description:
-                        'Control your phone completely by voice or text.\n\n📱 Launch Apps & Call Contacts\n🌐 Search Web & YouTube\n🔦 Control Flashlight\n⚙️ Manage Wi-Fi & Bluetooth\n📷 Open Camera',
-                    icon: Icons.auto_awesome,
-                  ),
-                  _buildLanguageSelectionPage(),
-                ],
-              ),
-            ),
-            _buildBottomControls(),
-          ],
+              _buildBottomControls(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLanguageSelectionPage() {
+  Widget _buildPage({required String title, required String description}) {
     return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.language, size: 80, color: AppTheme.primaryColor),
-          const SizedBox(height: 32),
-          Text(
-            'Language / ভাষা',
-            style: GoogleFonts.outfit(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'আপনি কি বাংলায় কথা বলবেন নাকি English এ? \nWhich language do you prefer to speak?',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              Expanded(
-                child: _LanguageCard(
-                  title: 'English',
-                  isSelected: _selectedLang == 'en',
-                  onTap: () => setState(() => _selectedLang = 'en'),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _LanguageCard(
-                  title: 'বাংলা',
-                  isSelected: _selectedLang == 'bn',
-                  onTap: () => setState(() => _selectedLang = 'bn'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPage(
-      {required String title,
-      required String description,
-      required IconData icon}) {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
+      padding: const EdgeInsets.symmetric(horizontal: 40.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  blurRadius: 40,
+                  spreadRadius: 5,
+                ),
+              ],
             ),
-            child: Icon(icon, size: 80, color: AppTheme.primaryColor),
-          ),
-          const SizedBox(height: 48),
+            child: Icon(
+              Icons.auto_awesome,
+              size: 100,
+              color: AppTheme.primaryColor,
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.1, 1.1),
+                duration: 2000.ms,
+                curve: Curves.easeInOut,
+              )
+              .shimmer(delay: 1000.ms, duration: 2000.ms),
+          const SizedBox(height: 60),
           Text(
             title,
             style: GoogleFonts.outfit(
-              fontSize: 28,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              letterSpacing: 1.2,
             ),
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
+          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
+          const SizedBox(height: 20),
           Text(
             description,
             style: GoogleFonts.outfit(
-              fontSize: 16,
+              fontSize: 17,
               color: AppTheme.textSecondary,
-              height: 1.5,
+              height: 1.6,
             ),
             textAlign: TextAlign.center,
-          ),
+          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
         ],
       ),
     );
@@ -170,82 +143,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildBottomControls() {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: List.generate(
-              2,
-              (index) => Container(
-                margin: const EdgeInsets.only(right: 8),
-                height: 8,
-                width: _currentPage == index ? 24 : 8,
-                decoration: BoxDecoration(
-                  color: _currentPage == index
-                      ? AppTheme.primaryColor
-                      : AppTheme.textHint,
-                  borderRadius: BorderRadius.circular(4),
+      padding: const EdgeInsets.all(40.0),
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 8,
+            shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+          ),
+          onPressed: _finishOnboarding,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Get Started',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ),
-          FloatingActionButton(
-            backgroundColor: AppTheme.primaryColor,
-            onPressed: () {
-              if (_currentPage == 1) {
-                _finishOnboarding();
-              } else {
-                _pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeIn,
-                );
-              }
-            },
-            child: const Icon(Icons.arrow_forward, color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LanguageCard extends StatelessWidget {
-  final String title;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _LanguageCard({
-    required this.title,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : AppTheme.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : AppTheme.textHint,
-            width: 2,
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward),
+            ],
           ),
         ),
-        child: Center(
-          child: Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : AppTheme.textPrimary,
-            ),
-          ),
-        ),
-      ),
+      ).animate().fadeIn(delay: 1000.ms).scale(begin: const Offset(0.9, 0.9)),
     );
   }
 }

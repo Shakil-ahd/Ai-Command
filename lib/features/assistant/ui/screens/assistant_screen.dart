@@ -13,7 +13,6 @@ import '../widgets/chat_bubble.dart';
 import '../widgets/command_input_bar.dart';
 import '../widgets/listening_indicator.dart';
 
-/// Main screen of the AI Assistant app.
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
 
@@ -42,6 +41,12 @@ class _AssistantScreenState extends State<AssistantScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+      }
+    });
   }
 
   @override
@@ -72,9 +77,7 @@ class _AssistantScreenState extends State<AssistantScreen>
       backgroundColor: AppTheme.bgDeep,
       body: Stack(
         children: [
-          // Animated background gradient
           _AnimatedBackground(controller: _bgController),
-
           SafeArea(
             child: Column(
               children: [
@@ -90,28 +93,27 @@ class _AssistantScreenState extends State<AssistantScreen>
                       }
                       return Column(
                         children: [
-                          // Chat messages list
                           Expanded(
                             child: _ChatList(
                               messages: state.messages,
                               scrollController: _scrollController,
                             ),
                           ),
-
-                          // Partial speech preview
                           if (state.partialSpeech != null &&
                               state.partialSpeech!.isNotEmpty)
                             _PartialSpeechPreview(text: state.partialSpeech!),
-
-                          // Voice orb (shown when listening)
                           if (state.status == AssistantStatus.listening)
                             const ListeningIndicator(),
-
-                          // Processing indicator
                           if (state.status == AssistantStatus.processing)
                             const _ProcessingDots(),
-
-                          // Input bar
+                          if (state.status == AssistantStatus.idle)
+                            _SuggestionChips(
+                              onTap: (text) {
+                                context
+                                    .read<AssistantBloc>()
+                                    .add(CommandSubmittedEvent(text));
+                              },
+                            ),
                           CommandInputBar(
                             textController: _textController,
                             focusNode: _focusNode,
@@ -148,8 +150,6 @@ class _AssistantScreenState extends State<AssistantScreen>
               ],
             ),
           ),
-
-          // Permission overlay
           BlocBuilder<PermissionBloc, PermissionState>(
             builder: (ctx, permState) {
               if (permState.isChecking) return const SizedBox.shrink();
@@ -169,10 +169,6 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  App Bar
-// ═══════════════════════════════════════════════════════════════
-
 class _AppBar extends StatelessWidget {
   final AnimationController pulseController;
   const _AppBar({required this.pulseController});
@@ -183,23 +179,33 @@ class _AppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          // Logo
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.4),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ],
+          AnimatedBuilder(
+            animation: pulseController,
+            builder: (_, __) => Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor
+                        .withOpacity(0.3 + pulseController.value * 0.2),
+                    blurRadius: 12 + pulseController.value * 8,
+                    spreadRadius: 1 + pulseController.value * 2,
+                  ),
+                ],
+              ),
+              child:
+                  const Icon(Icons.auto_awesome, color: Colors.white, size: 22)
+                      .animate(onPlay: (c) => c.repeat())
+                      .shimmer(delay: 2000.ms, duration: 2000.ms)
+                      .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.1, 1.1),
+                          duration: 1000.ms,
+                          curve: Curves.easeInOut),
             ),
-            child:
-                const Icon(Icons.auto_awesome, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -239,58 +245,20 @@ class _AppBar extends StatelessWidget {
               ],
             ),
           ),
-
-          // Clear chat button
           IconButton(
-            onPressed: () =>
-                context.read<AssistantBloc>().add(ClearChatHistoryEvent()),
-            icon: const Icon(Icons.delete_sweep_rounded, size: 22),
-            color: AppTheme.textSecondary,
-            tooltip: 'Clear Chat',
-          ),
-
-          // Refresh apps button
-          IconButton(
-            onPressed: () =>
-                context.read<AssistantBloc>().add(RefreshAppsEvent()),
+            onPressed: () {
+              context.read<AssistantBloc>().add(RefreshAppsEvent());
+              context.read<AssistantBloc>().add(ClearChatHistoryEvent());
+            },
             icon: const Icon(Icons.refresh_rounded, size: 22),
             color: AppTheme.textSecondary,
-            tooltip: 'Refresh installed apps',
-          ),
-          // App list count
-          BlocBuilder<AssistantBloc, AssistantState>(
-            builder: (ctx, state) {
-              if (state.installedApps.isEmpty) return const SizedBox.shrink();
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                  ),
-                ),
-                child: Text(
-                  '${state.installedApps.length} apps',
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              );
-            },
+            tooltip: 'Refresh & Clear Chat',
           ),
         ],
       ),
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Loading View
-// ═══════════════════════════════════════════════════════════════
 
 class _LoadingView extends StatelessWidget {
   const _LoadingView();
@@ -319,25 +287,39 @@ class _LoadingView extends StatelessWidget {
                 const Icon(Icons.auto_awesome, color: Colors.white, size: 36),
           )
               .animate(onPlay: (c) => c.repeat())
-              .shimmer(duration: 1500.ms, color: Colors.white30),
-          const SizedBox(height: 24),
+              .shimmer(duration: 1500.ms, color: Colors.white30)
+              .scale(
+                  begin: const Offset(0.8, 0.8),
+                  end: const Offset(1.2, 1.2),
+                  duration: 1000.ms,
+                  curve: Curves.easeInOut)
+              .rotate(duration: 5000.ms)
+              .animate()
+              .fadeIn(duration: 800.ms),
+          const SizedBox(height: 32),
           Text(
-            'Loading your assistant…',
+            'SakoAI',
             style: GoogleFonts.outfit(
-              fontSize: 16,
-              color: AppTheme.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 2,
             ),
-          ),
+          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+          const SizedBox(height: 8),
+          Text(
+            'Your Personal AI',
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              color: AppTheme.textSecondary,
+              letterSpacing: 1.2,
+            ),
+          ).animate().fadeIn(delay: 600.ms),
         ],
       ),
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Chat List
-// ═══════════════════════════════════════════════════════════════
 
 class _ChatList extends StatelessWidget {
   final List<ChatMessage> messages;
@@ -359,18 +341,12 @@ class _ChatList extends StatelessWidget {
         return ChatBubble(
           message: msg,
           key: ValueKey(msg.id),
-          onDelete: () =>
-              context.read<AssistantBloc>().add(DeleteMessageEvent(msg.id)),
         ).animate().fadeIn(duration: 300.ms).slideY(
             begin: 0.3, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
       },
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Partial Speech Preview
-// ═══════════════════════════════════════════════════════════════
 
 class _PartialSpeechPreview extends StatelessWidget {
   final String text;
@@ -405,10 +381,6 @@ class _PartialSpeechPreview extends StatelessWidget {
     ).animate().fadeIn(duration: 150.ms);
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Processing Dots
-// ═══════════════════════════════════════════════════════════════
 
 class _ProcessingDots extends StatelessWidget {
   const _ProcessingDots();
@@ -445,10 +417,6 @@ class _ProcessingDots extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Permission Overlay
-// ═══════════════════════════════════════════════════════════════
 
 class _PermissionOverlay extends StatelessWidget {
   final VoidCallback onGrant;
@@ -524,10 +492,6 @@ class _PermissionOverlay extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Animated Background
-// ═══════════════════════════════════════════════════════════════
-
 class _AnimatedBackground extends StatelessWidget {
   final AnimationController controller;
   const _AnimatedBackground({required this.controller});
@@ -552,7 +516,6 @@ class _BgPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Base gradient
     final bgPaint = Paint()
       ..shader = const LinearGradient(
         colors: [Color(0xFF080818), Color(0xFF0D0D28), Color(0xFF080818)],
@@ -561,7 +524,6 @@ class _BgPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
-    // Glowing orbs
     _drawOrb(canvas, size, Color(0xFF6C63FF), 0.2, 0.15, 200, t);
     _drawOrb(canvas, size, Color(0xFF00D4FF), 0.8, 0.5, 150, 1 - t);
     _drawOrb(canvas, size, Color(0xFF6C63FF), 0.5, 0.9, 100, t * 0.7);
@@ -582,4 +544,51 @@ class _BgPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BgPainter old) => old.t != t;
+}
+
+class _SuggestionChips extends StatelessWidget {
+  final Function(String) onTap;
+
+  const _SuggestionChips({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final suggestions = [
+      'Who is SakoAI?',
+      'What can you do?',
+      'Open YouTube',
+      'Play sad song',
+    ];
+
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: suggestions.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              backgroundColor: AppTheme.bgSurface.withOpacity(0.8),
+              side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.3)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              label: Text(
+                suggestions[index],
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onPressed: () => onTap(suggestions[index]),
+            ),
+          );
+        },
+      ),
+    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0);
+  }
 }

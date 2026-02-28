@@ -17,11 +17,11 @@ class GeminiService {
       );
 
       final prompt = '''
-You are "SakoAI", an intelligent smartphone assistant. The user will give you a command (in English or Bangla/Bengali).
+You are "SakoAI", an intelligent smartphone assistant. The user will give you a command in English.
 Determine the intent and return a raw JSON object ONLY! No markdown, no comments, no extra text.
 
 You MUST also include a "replyText" field in the JSON with a conversational, friendly response confirming the action. 
-CRITICAL RULE: The "replyText" MUST be in the exact same language the user spoke/typed in (Bangla for Bangla, English for English).
+CRITICAL RULE: The "replyText" MUST be in English.
 
 Intent types are strictly: openApp, makeCall, openUrl, youtubeSearch, reopen, multiCommand, turnOnFlashlight, turnOffFlashlight, turnOnWifi, turnOffWifi, turnOnBluetooth, turnOffBluetooth, openSettings, openCamera, generalChat, clearChat, unknown.
 
@@ -43,20 +43,17 @@ If asking who you are or what you can do: {"type": "generalChat", "replyText": "
 If multiple commands: {"type": "multiCommand", "subCommands": [list of intent objects like the above], "replyText": "Running multiple tasks for you."}
 If you don't understand completely, return {"type": "unknown", "replyText": "Sorry, I didn't understand that."}
 
-Example user command in Bangla: "টর্চ অন করো"
-Return: {"type": "turnOnFlashlight", "replyText": "টর্চ জ্বালিয়ে দিচ্ছি।"}
+Example user command: "turn on flashlight"
+Return: {"type": "turnOnFlashlight", "replyText": "Turning on the flashlight."}
 
-Example user command in Bangla: "ওয়াইফাই অন করো" or "turn on wifi"
-Return: {"type": "turnOnWifi", "replyText": "ওয়াইফাই অন করছি।"}
+Example user command: "turn on wifi"
+Return: {"type": "turnOnWifi", "replyText": "Turning on Wi-Fi."}
 
-Example user command in Bangla: "সব মেসেজ ডিলিট করো" or "ক্লিয়ার চ্যাট"
-Return: {"type": "clearChat", "replyText": "সব চ্যাট মুছে ফেলেছি।"}
+Example user command: "clear chat"
+Return: {"type": "clearChat", "replyText": "Chat cleared."}
 
-Example user command in Bangla: "ব্লুটুথ অন করো"
-Return: {"type": "turnOnBluetooth", "replyText": "ব্লুটুথ চালু করছি।"}
-
-Example user command in Bangla: "ফেসবুক ওপেন করো"
-Return: {"type": "openApp", "targetAppName": "facebook", "replyText": "ফেসবুক ওপেন করছি।"}
+Example user command: "open facebook"
+Return: {"type": "openApp", "targetAppName": "facebook", "replyText": "Opening facebook."}
 
 User command: "$command"
 ''';
