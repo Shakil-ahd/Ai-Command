@@ -1,1 +1,576 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/theme/app_theme.dart';
+import '../../bloc/assistant_bloc.dart';
+import '../../bloc/assistant_event_state.dart';
+import '../../bloc/permission_bloc.dart';
+import '../../bloc/permission_event_state.dart';
+import '../../domain/entities/chat_message.dart';
+import '../widgets/chat_bubble.dart';
+import '../widgets/command_input_bar.dart';
+import '../widgets/listening_indicator.dart';
+
+/// Main screen of the AI Assistant app.
+class AssistantScreen extends StatefulWidget {
+  const AssistantScreen({super.key});
+
+  @override
+  State<AssistantScreen> createState() => _AssistantScreenState();
+}
+
+class _AssistantScreenState extends State<AssistantScreen>
+    with TickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  late AnimationController _bgController;
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bgController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _textController.dispose();
+    _focusNode.dispose();
+    _bgController.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.bgDeep,
+      body: Stack(
+        children: [
+          // Animated background gradient
+          _AnimatedBackground(controller: _bgController),
+
+          SafeArea(
+            child: Column(
+              children: [
+                _AppBar(pulseController: _pulseController),
+                Expanded(
+                  child: BlocConsumer<AssistantBloc, AssistantState>(
+                    listener: (ctx, state) {
+                      _scrollToBottom();
+                    },
+                    builder: (ctx, state) {
+                      if (state.status == AssistantStatus.loading) {
+                        return const _LoadingView();
+                      }
+                      return Column(
+                        children: [
+                          // Chat messages list
+                          Expanded(
+                            child: _ChatList(
+                              messages: state.messages,
+                              scrollController: _scrollController,
+                            ),
+                          ),
+
+                          // Partial speech preview
+                          if (state.partialSpeech != null &&
+                              state.partialSpeech!.isNotEmpty)
+                            _PartialSpeechPreview(text: state.partialSpeech!),
+
+                          // Voice orb (shown when listening)
+                          if (state.status == AssistantStatus.listening)
+                            const ListeningIndicator(),
+
+                          // Processing indicator
+                          if (state.status == AssistantStatus.processing)
+                            const _ProcessingDots(),
+
+                          // Input bar
+                          CommandInputBar(
+                            textController: _textController,
+                            focusNode: _focusNode,
+                            isListening:
+                                state.status == AssistantStatus.listening,
+                            isProcessing:
+                                state.status == AssistantStatus.processing,
+                            ttsEnabled: state.ttsEnabled,
+                            onSubmit: (text) {
+                              context
+                                  .read<AssistantBloc>()
+                                  .add(CommandSubmittedEvent(text));
+                              _textController.clear();
+                            },
+                            onVoiceTap: () {
+                              final bloc = context.read<AssistantBloc>();
+                              if (state.status == AssistantStatus.listening) {
+                                bloc.add(VoiceRecordingStoppedEvent());
+                              } else {
+                                bloc.add(VoiceRecordingStartedEvent());
+                              }
+                            },
+                            onTtsToggle: () {
+                              context
+                                  .read<AssistantBloc>()
+                                  .add(TtsToggledEvent());
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Permission overlay
+          BlocBuilder<PermissionBloc, PermissionState>(
+            builder: (ctx, permState) {
+              if (permState.isChecking) return const SizedBox.shrink();
+              if (!permState.micGranted) {
+                return _PermissionOverlay(
+                  onGrant: () => context
+                      .read<PermissionBloc>()
+                      .add(RequestPermissionsEvent()),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  App Bar
+// ═══════════════════════════════════════════════════════════════
+
+class _AppBar extends StatelessWidget {
+  final AnimationController pulseController;
+  const _AppBar({required this.pulseController});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          // Logo
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child:
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI Assistant',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                BlocBuilder<AssistantBloc, AssistantState>(
+                  builder: (ctx, state) {
+                    final statusText = switch (state.status) {
+                      AssistantStatus.idle => '● Online',
+                      AssistantStatus.listening => '🎙️ Listening…',
+                      AssistantStatus.processing => '⚙️ Processing…',
+                      AssistantStatus.loading => '⏳ Loading…',
+                      AssistantStatus.error => '⚠️ Error',
+                    };
+                    return Text(
+                      statusText,
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        color: state.status == AssistantStatus.idle
+                            ? AppTheme.successColor
+                            : AppTheme.accentColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Refresh apps button
+          IconButton(
+            onPressed: () =>
+                context.read<AssistantBloc>().add(RefreshAppsEvent()),
+            icon: const Icon(Icons.refresh_rounded, size: 22),
+            color: AppTheme.textSecondary,
+            tooltip: 'Refresh installed apps',
+          ),
+          // App list count
+          BlocBuilder<AssistantBloc, AssistantState>(
+            builder: (ctx, state) {
+              if (state.installedApps.isEmpty) return const SizedBox.shrink();
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  '${state.installedApps.length} apps',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Loading View
+// ═══════════════════════════════════════════════════════════════
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child:
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 36),
+          )
+              .animate(onPlay: (c) => c.repeat())
+              .shimmer(duration: 1500.ms, color: Colors.white30),
+          const SizedBox(height: 24),
+          Text(
+            'Loading your assistant…',
+            style: GoogleFonts.outfit(
+              fontSize: 16,
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Chat List
+// ═══════════════════════════════════════════════════════════════
+
+class _ChatList extends StatelessWidget {
+  final List<ChatMessage> messages;
+  final ScrollController scrollController;
+
+  const _ChatList({
+    required this.messages,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: messages.length,
+      itemBuilder: (ctx, index) {
+        final msg = messages[index];
+        return ChatBubble(message: msg, key: ValueKey(msg.id))
+            .animate()
+            .fadeIn(duration: 300.ms)
+            .slideY(
+                begin: 0.3,
+                end: 0,
+                duration: 300.ms,
+                curve: Curves.easeOutCubic);
+      },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Partial Speech Preview
+// ═══════════════════════════════════════════════════════════════
+
+class _PartialSpeechPreview extends StatelessWidget {
+  final String text;
+  const _PartialSpeechPreview({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.accentColor.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.mic, color: AppTheme.accentColor, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 150.ms);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Processing Dots
+// ═══════════════════════════════════════════════════════════════
+
+class _ProcessingDots extends StatelessWidget {
+  const _ProcessingDots();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Row(
+        children: List.generate(3, (i) {
+          return Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              shape: BoxShape.circle,
+            ),
+          )
+              .animate(onPlay: (c) => c.repeat())
+              .scaleXY(
+                begin: 0.5,
+                end: 1.2,
+                delay: Duration(milliseconds: i * 150),
+                duration: const Duration(milliseconds: 600),
+              )
+              .then()
+              .scaleXY(
+                  begin: 1.2,
+                  end: 0.5,
+                  duration: const Duration(milliseconds: 600));
+        }),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Permission Overlay
+// ═══════════════════════════════════════════════════════════════
+
+class _PermissionOverlay extends StatelessWidget {
+  final VoidCallback onGrant;
+  const _PermissionOverlay({required this.onGrant});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppTheme.bgDeep.withOpacity(0.95),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: AppTheme.primaryColor.withOpacity(0.5), width: 2),
+                ),
+                child: const Icon(Icons.mic_rounded,
+                    color: AppTheme.primaryColor, size: 36),
+              ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+              const SizedBox(height: 24),
+              Text(
+                'Permissions Required',
+                style: GoogleFonts.outfit(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'AI Assistant needs microphone access for voice commands. Contacts and Phone permissions enable calling features.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onGrant,
+                  icon: const Icon(Icons.security_rounded),
+                  label: const Text('Grant Permissions'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Animated Background
+// ═══════════════════════════════════════════════════════════════
+
+class _AnimatedBackground extends StatelessWidget {
+  final AnimationController controller;
+  const _AnimatedBackground({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) {
+        return CustomPaint(
+          painter: _BgPainter(controller.value),
+          size: MediaQuery.of(context).size,
+        );
+      },
+    );
+  }
+}
+
+class _BgPainter extends CustomPainter {
+  final double t;
+  _BgPainter(this.t);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Base gradient
+    final bgPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF080818), Color(0xFF0D0D28), Color(0xFF080818)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+
+    // Glowing orbs
+    _drawOrb(canvas, size, Color(0xFF6C63FF), 0.2, 0.15, 200, t);
+    _drawOrb(canvas, size, Color(0xFF00D4FF), 0.8, 0.5, 150, 1 - t);
+    _drawOrb(canvas, size, Color(0xFF6C63FF), 0.5, 0.9, 100, t * 0.7);
+  }
+
+  void _drawOrb(Canvas canvas, Size size, Color color, double xFrac,
+      double yFrac, double radius, double alpha) {
+    final paint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 80)
+      ..color = color.withOpacity(0.08 + alpha * 0.06);
+
+    canvas.drawCircle(
+      Offset(size.width * xFrac, size.height * yFrac),
+      radius + alpha * 30,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BgPainter old) => old.t != t;
+}
