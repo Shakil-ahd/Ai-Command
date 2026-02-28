@@ -8,7 +8,6 @@ import '../services/tts_service.dart';
 import 'assistant_event_state.dart';
 import '../../../../core/utils/result.dart';
 
-/// The main BLoC that powers the assistant UI.
 class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
   final ProcessCommandUseCase processCommandUseCase;
   final GetInstalledAppsUseCase getInstalledAppsUseCase;
@@ -31,9 +30,9 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     on<ContactSelectedEvent>(_onContactSelected);
     on<TtsToggledEvent>(_onTtsToggled);
     on<RefreshAppsEvent>(_onRefreshApps);
+    on<ClearChatHistoryEvent>(_onClearChatHistory);
+    on<DeleteMessageEvent>(_onDeleteMessage);
   }
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
 
   Future<void> _onInitialized(
     AssistantInitializedEvent event,
@@ -41,28 +40,35 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
   ) async {
     emit(state.copyWith(status: AssistantStatus.loading));
 
-    // Load installed apps
     final result = await getInstalledAppsUseCase();
     final apps = result is Success ? (result as Success).data : [];
 
-    // Initialize speech recognizer in background
     speechService.initialize();
 
-    // Welcome message
-    final welcome = _makeAssistantMessage(
-      '👋 Hi! I\'m your AI Assistant.\n\n'
-      'I can help you:\n'
-      '• 📱 Open any app — "open whatsapp"\n'
-      '• 📞 Call contacts — "call mom"\n'
-      '• 🌐 Open websites — "open google.com"\n'
-      '• ▶️ Search YouTube — "search dart tutorial on youtube"\n\n'
-      'Tap the mic or type your command!',
-    );
+    List<ChatMessage> messages = await contextRepository.getMessages();
+
+    if (messages.isEmpty) {
+      messages = [
+        _makeAssistantMessage(
+          '👋 Hi, I am SakoAI, how can I help you?\n\n'
+          'Here are some tips on what you can ask me to do:\n\n'
+          '📱 Open apps (e.g. "open WhatsApp" or "ফেসবুক ওপেন করো")\n'
+          '📞 Call contacts (e.g. "call mom" or "বাবাকে কল করো")\n'
+          '🌐 Open websites (e.g. "open google.com")\n'
+          '▶️ Search YouTube (e.g. "search funny cats on youtube")\n'
+          '🔦 Control flashlight (e.g. "turn on flashlight" or "টর্চ জ্বালাও")\n'
+          '⚙️ Open Settings (e.g. "open wifi settings" or "ওয়াইফাই অন করো")\n'
+          '📷 Open Camera (e.g. "take a photo" or "ক্যামেরা ওপেন করো")\n\n'
+          'Tap the mic or type your command to get started!',
+        )
+      ];
+      await contextRepository.saveMessages(messages);
+    }
 
     emit(state.copyWith(
       status: AssistantStatus.idle,
       installedApps: apps,
-      messages: [welcome],
+      messages: messages,
       clearError: true,
     ));
   }
@@ -74,50 +80,58 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     final command = event.command.trim();
     if (command.isEmpty) return;
 
-    // Add user message
     final userMsg = _makeUserMessage(command);
+    final userMessages = [...state.messages, userMsg];
     emit(state.copyWith(
       status: AssistantStatus.processing,
-      messages: [...state.messages, userMsg],
+      messages: userMessages,
       clearPartial: true,
     ));
+    await contextRepository.saveMessages(userMessages);
 
-    // Process the command
     try {
       final response = await processCommandUseCase(command);
-
       final assistantMsg = _makeAssistantMessage(response.message);
+
+      List<ChatMessage> finalMessages;
+      if (response.clearChat) {
+        // Keep only the first welcome message
+        final welcomeMsg =
+            state.messages.isNotEmpty ? state.messages.first : assistantMsg;
+        finalMessages = [welcomeMsg, assistantMsg];
+      } else {
+        finalMessages = [...userMessages, assistantMsg];
+      }
 
       emit(state.copyWith(
         status: AssistantStatus.idle,
-        messages: [...state.messages, assistantMsg],
+        messages: finalMessages,
       ));
+      await contextRepository.saveMessages(finalMessages);
 
-      // Speak the response
-      if (state.ttsEnabled) {
+      if (state.ttsEnabled && event.isVoice) {
         ttsService.speak(
-            response.message.replaceAll(RegExp(r'[✅📞❌▶️🌐📱👋•🤔❓]'), ''));
+            response.message.replaceAll(RegExp(r'[✅📞❌▶️🌐📱👋•🤔❓🔦]'), ''));
       }
 
-      // If multiple contacts, show selection
       if (response.contactChoices != null &&
           response.contactChoices!.isNotEmpty) {
-        // BLoC doesn't directly show dialogs — this is handled in the UI layer
-        // by checking messages for contactChoices indicator
         final selectionMsg = _makeAssistantMessage(
           '📋 Multiple matches:\n${response.contactChoices!.map((c) => '• ${c.name} (${c.phoneNumber})').join('\n')}\n\nTap a contact above to call.',
           contactChoices: response.contactChoices,
         );
-        emit(state.copyWith(
-          messages: [...state.messages, selectionMsg],
-        ));
+        final finalWithChoice = [...finalMessages, selectionMsg];
+        emit(state.copyWith(messages: finalWithChoice));
+        await contextRepository.saveMessages(finalWithChoice);
       }
     } catch (e) {
       final errMsg = _makeAssistantMessage('⚠️ Something went wrong: $e');
+      final errorMessages = [...userMessages, errMsg];
       emit(state.copyWith(
         status: AssistantStatus.idle,
-        messages: [...state.messages, errMsg],
+        messages: errorMessages,
       ));
+      await contextRepository.saveMessages(errorMessages);
     }
   }
 
@@ -130,7 +144,9 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
       if (!ok) {
         final errMsg = _makeAssistantMessage(
             '🎙️ Microphone not available. Please check permissions.');
-        emit(state.copyWith(messages: [...state.messages, errMsg]));
+        final updated = [...state.messages, errMsg];
+        emit(state.copyWith(messages: updated));
+        await contextRepository.saveMessages(updated);
         return;
       }
     }
@@ -138,9 +154,11 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     emit(state.copyWith(status: AssistantStatus.listening));
 
     await speechService.startListening(
+      localeId:
+          contextRepository.getPreferredLanguage() == 'bn' ? 'bn_BD' : 'en_US',
       onResult: (text, isFinal) {
         if (isFinal && text.isNotEmpty) {
-          add(CommandSubmittedEvent(text));
+          add(CommandSubmittedEvent(text, isVoice: true));
         } else {
           add(SpeechPartialResultEvent(text));
         }
@@ -195,14 +213,40 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
         result is Success ? (result as Success).data : state.installedApps;
     final msg = _makeAssistantMessage(
         '🔄 App list refreshed! Found ${apps.length} apps.');
+
+    final updated = [...state.messages, msg];
     emit(state.copyWith(
       status: AssistantStatus.idle,
       installedApps: apps,
-      messages: [...state.messages, msg],
+      messages: updated,
     ));
+    await contextRepository.saveMessages(updated);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  Future<void> _onDeleteMessage(
+    DeleteMessageEvent event,
+    Emitter<AssistantState> emit,
+  ) async {
+    final updated = List<ChatMessage>.from(state.messages)
+      ..removeWhere((m) => m.id == event.messageId);
+
+    emit(state.copyWith(messages: updated));
+    await contextRepository.saveMessages(updated);
+  }
+
+  Future<void> _onClearChatHistory(
+    ClearChatHistoryEvent event,
+    Emitter<AssistantState> emit,
+  ) async {
+    if (state.messages.isEmpty) return;
+
+    // Keep only the first welcome message
+    final welcomeMsg = state.messages.first;
+    final updated = [welcomeMsg];
+
+    emit(state.copyWith(messages: updated));
+    await contextRepository.saveMessages(updated);
+  }
 
   ChatMessage _makeUserMessage(String text) => ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),

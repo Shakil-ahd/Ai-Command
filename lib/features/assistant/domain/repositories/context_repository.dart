@@ -1,16 +1,19 @@
 import '../entities/app_info.dart';
+import '../entities/chat_message.dart';
 
-/// Stores and retrieves context memory (last opened app, last query, etc.).
 abstract class ContextRepository {
-  /// Returns the last successfully launched app.
+  Future<void> saveLastOpenedApp(AppInfo appInfo);
   Future<AppInfo?> getLastOpenedApp();
 
-  /// Persists the last launched app.
-  Future<void> saveLastOpenedApp(AppInfo app);
-
-  /// Returns the last search query.
+  Future<void> saveLastSearchQuery(String query);
   Future<String?> getLastSearchQuery();
 
-  /// Persists the last search query.
-  Future<void> saveLastSearchQuery(String query);
+  Future<void> saveMessages(List<ChatMessage> messages);
+  Future<List<ChatMessage>> getMessages();
+
+  Future<void> setOnboardingCompleted(bool completed);
+  bool isOnboardingCompleted();
+
+  Future<void> setPreferredLanguage(String languageCode);
+  String getPreferredLanguage();
 }

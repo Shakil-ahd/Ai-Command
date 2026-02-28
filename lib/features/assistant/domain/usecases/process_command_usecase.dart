@@ -1,3 +1,4 @@
+import 'package:android_intent_plus/android_intent.dart';
 import '../entities/app_info.dart';
 import '../entities/contact_info.dart';
 import '../entities/command_intent.dart';
@@ -9,24 +10,19 @@ import '../../../../core/utils/result.dart';
 import 'launch_app_usecase.dart';
 import 'make_call_usecase.dart';
 import 'open_url_usecase.dart';
+import 'toggle_flashlight_usecase.dart';
+import '../../platform/android_app_launcher.dart';
 
-/// The central use-case that orchestrates command processing.
-///
-/// Flow:
-///   1. Parse raw text → CommandIntent (via IntentDetectionService)
-///   2. Route intent → appropriate action use-case
-///   3. Update context memory
-///   4. Return human-readable response
 class ProcessCommandUseCase {
   final IntentDetectionService intentDetectionService;
   final LaunchAppUseCase launchAppUseCase;
   final MakeCallUseCase makeCallUseCase;
   final OpenUrlUseCase openUrlUseCase;
+  final ToggleFlashlightUseCase toggleFlashlightUseCase;
   final ContextRepository contextRepository;
   final AppRepository appRepository;
   final ContactRepository contactRepository;
 
-  // Cache — refreshed on first command and on explicit refresh
   List<AppInfo>? _cachedApps;
   List<ContactInfo>? _cachedContacts;
 
@@ -35,33 +31,55 @@ class ProcessCommandUseCase {
     required this.launchAppUseCase,
     required this.makeCallUseCase,
     required this.openUrlUseCase,
+    required this.toggleFlashlightUseCase,
     required this.contextRepository,
     required this.appRepository,
     required this.contactRepository,
   });
 
   Future<CommandResponse> call(String rawCommand) async {
-    // Ensure caches are loaded
     await _warmupCaches();
+    final intent = await intentDetectionService.detect(rawCommand);
+    final response = await _executeIntent(intent);
 
-    final intent = intentDetectionService.detect(rawCommand);
-
-    return _executeIntent(intent);
+    if (intent.replyText != null && intent.replyText!.isNotEmpty) {
+      // Optionally you can replace the success message entirely, or just return the replyText.
+      // It's safer to just return a response where the primary message is replyText.
+      if (response.success && response.contactChoices == null) {
+        return CommandResponse.success(intent.replyText!,
+            launchedApp: response.launchedApp);
+      }
+    }
+    return response;
   }
 
   Future<CommandResponse> _executeIntent(CommandIntent intent) async {
     switch (intent.type) {
       case IntentType.openApp:
-        return _handleOpenApp(intent.targetAppName!, intent.rawText);
+        final targetAppName = intent.targetAppName?.trim() ?? '';
+        if (targetAppName.isEmpty)
+          return CommandResponse.error(
+              'Sorry, I couldn\'t determine which app to open.');
+        return _handleOpenApp(targetAppName, intent.rawText);
 
       case IntentType.makeCall:
-        return _handleCall(intent.targetContact!, intent.rawText);
+        final targetContact = intent.targetContact?.trim() ?? '';
+        if (targetContact.isEmpty)
+          return CommandResponse.error(
+              'Sorry, I couldn\'t determine the contact name.');
+        return _handleCall(targetContact, intent.rawText);
 
       case IntentType.openUrl:
-        return _handleUrl(intent.url!);
+        final url = intent.url?.trim() ?? '';
+        if (url.isEmpty)
+          return CommandResponse.error('Sorry, the URL provided is empty.');
+        return _handleUrl(url);
 
       case IntentType.youtubeSearch:
-        return _handleYouTubeSearch(intent.searchQuery!);
+        final searchQuery = intent.searchQuery?.trim() ?? '';
+        if (searchQuery.isEmpty)
+          return CommandResponse.error('Sorry, no search query was detected.');
+        return _handleYouTubeSearch(searchQuery);
 
       case IntentType.reopen:
         return _handleReopen();
@@ -69,18 +87,48 @@ class ProcessCommandUseCase {
       case IntentType.multiCommand:
         return _handleMultiCommand(intent.subCommands);
 
+      case IntentType.turnOnFlashlight:
+        return _handleFlashlight(true);
+
+      case IntentType.turnOffFlashlight:
+        return _handleFlashlight(false);
+
+      case IntentType.turnOnWifi:
+        return _handleToggleSetting('wifi', true);
+
+      case IntentType.turnOffWifi:
+        return _handleToggleSetting('wifi', false);
+
+      case IntentType.turnOnBluetooth:
+        return _handleToggleSetting('bluetooth', true);
+
+      case IntentType.turnOffBluetooth:
+        return _handleToggleSetting('bluetooth', false);
+
+      case IntentType.clearChat:
+        return CommandResponse.success('Chat cleared.', clearChat: true);
+
+      case IntentType.openSettings:
+        final settingType = intent.targetSetting?.trim() ?? 'general';
+        return _handleOpenSettings(settingType);
+
+      case IntentType.openCamera:
+        return _handleOpenCamera();
+
+      case IntentType.generalChat:
+        return CommandResponse.success(
+            intent.replyText ?? 'Hello! I am SakoAI.');
+
       case IntentType.unknown:
         return CommandResponse.error(
           '🤔 I didn\'t understand that. Try:\n'
           '• "open whatsapp"\n'
           '• "call mom"\n'
           '• "search flutter on youtube"\n'
-          '• "open youtube.com"',
+          '• "turn on flashlight"',
         );
     }
   }
-
-  // ── Handlers ─────────────────────────────────────────────────────────────
 
   Future<CommandResponse> _handleOpenApp(String appName, String rawText) async {
     final result = await launchAppUseCase(
@@ -108,9 +156,7 @@ class ProcessCommandUseCase {
     );
 
     if (result is CallSuccess) {
-      return CommandResponse.success(
-        '📞 Calling ${result.contact.name}…',
-      );
+      return CommandResponse.success('📞 Calling ${result.contact.name}…');
     } else if (result is CallMultipleMatches) {
       return CommandResponse.multipleContacts(
         'Found multiple contacts matching "$contactName". Who do you want to call?',
@@ -118,8 +164,7 @@ class ProcessCommandUseCase {
       );
     } else if (result is CallNotFound) {
       return CommandResponse.error(
-        '❌ No contact named "${result.query}" found.',
-      );
+          '❌ No contact named "${result.query}" found.');
     } else if (result is CallError) {
       return CommandResponse.error(result.message);
     }
@@ -159,13 +204,23 @@ class ProcessCommandUseCase {
     return _handleOpenApp(lastApp.name, 'reopen ${lastApp.name}');
   }
 
+  Future<CommandResponse> _handleFlashlight(bool turnOn) async {
+    final result = await toggleFlashlightUseCase(turnOn: turnOn);
+    if (result is Success<bool>) {
+      return CommandResponse.success(
+          turnOn ? '🔦 Flashlight turned ON' : '🔦 Flashlight turned OFF');
+    } else if (result is Failure<bool>) {
+      return CommandResponse.error(result.message);
+    }
+    return CommandResponse.error('Could not toggle flashlight.');
+  }
+
   Future<CommandResponse> _handleMultiCommand(
       List<CommandIntent> subCommands) async {
     final responses = <String>[];
     for (final sub in subCommands) {
       final r = await _executeIntent(sub);
       responses.add(r.message);
-      // Small delay between sequential launches
       if (subCommands.indexOf(sub) < subCommands.length - 1) {
         await Future.delayed(const Duration(milliseconds: 800));
       }
@@ -173,24 +228,77 @@ class ProcessCommandUseCase {
     return CommandResponse.success(responses.join('\n'));
   }
 
-  // ── Cache management ─────────────────────────────────────────────────────
+  Future<CommandResponse> _handleOpenSettings(String settingType) async {
+    String action;
+    switch (settingType.toLowerCase()) {
+      case 'wifi':
+        action = 'android.settings.WIFI_SETTINGS';
+        break;
+      case 'bluetooth':
+        action = 'android.settings.BLUETOOTH_SETTINGS';
+        break;
+      case 'display':
+        action = 'android.settings.DISPLAY_SETTINGS';
+        break;
+      default:
+        action = 'android.settings.SETTINGS';
+    }
+
+    try {
+      final intent = AndroidIntent(action: action);
+      await intent.launch();
+      return CommandResponse.success('Opening settings...');
+    } catch (e) {
+      return CommandResponse.error('Could not open settings.');
+    }
+  }
+
+  Future<CommandResponse> _handleToggleSetting(
+      String setting, bool enable) async {
+    final launcher = AndroidAppLauncher();
+    bool success = false;
+
+    if (setting == 'wifi') {
+      success = await launcher.toggleWifi(enable);
+    } else if (setting == 'bluetooth') {
+      success = await launcher.toggleBluetooth(enable);
+    }
+
+    if (success) {
+      if (enable) return CommandResponse.success('✅ Turned on $setting.');
+      return CommandResponse.success('☑️ Turned off $setting.');
+    } else {
+      // Fallback: Open settings for that
+      return _handleOpenSettings(setting);
+    }
+  }
+
+  Future<CommandResponse> _handleOpenCamera() async {
+    try {
+      final intent = const AndroidIntent(
+        action: 'android.media.action.STILL_IMAGE_CAMERA',
+      );
+      await intent.launch();
+      return CommandResponse.success('Opening camera...');
+    } catch (e) {
+      return CommandResponse.error('Could not open camera.');
+    }
+  }
 
   Future<void> _warmupCaches() async {
     _cachedApps ??= await appRepository.getInstalledApps();
     _cachedContacts ??= await contactRepository.getContacts();
   }
 
-  /// Force-refresh caches (call after permission grant or on explicit request).
   Future<void> refreshCaches() async {
     _cachedApps = await appRepository.getInstalledApps();
     _cachedContacts = await contactRepository.getContacts();
   }
 }
 
-// ── Response DTO ──────────────────────────────────────────────────────────────
-
 class CommandResponse {
   final bool success;
+  final bool clearChat;
   final String message;
   final AppInfo? launchedApp;
   final List<ContactInfo>? contactChoices;
@@ -198,12 +306,18 @@ class CommandResponse {
   const CommandResponse._({
     required this.success,
     required this.message,
+    this.clearChat = false,
     this.launchedApp,
     this.contactChoices,
   });
 
-  factory CommandResponse.success(String msg, {AppInfo? launchedApp}) =>
-      CommandResponse._(success: true, message: msg, launchedApp: launchedApp);
+  factory CommandResponse.success(String msg,
+          {AppInfo? launchedApp, bool clearChat = false}) =>
+      CommandResponse._(
+          success: true,
+          message: msg,
+          clearChat: clearChat,
+          launchedApp: launchedApp);
 
   factory CommandResponse.error(String msg) =>
       CommandResponse._(success: false, message: msg);

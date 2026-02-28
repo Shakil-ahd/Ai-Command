@@ -51,6 +51,39 @@ class MainActivity : FlutterActivity() {
                         }
                     }
 
+                    "toggleBluetooth" -> {
+                        val enable = call.argument<Boolean>("enable") ?: true
+                        try {
+                            val bluetoothAdapter: android.bluetooth.BluetoothAdapter? = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+                            if (enable) {
+                                bluetoothAdapter?.enable()
+                            } else {
+                                bluetoothAdapter?.disable()
+                            }
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.success(false)
+                        }
+                    }
+
+                    "toggleWifi" -> {
+                        val enable = call.argument<Boolean>("enable") ?: true
+                        try {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                val panelIntent = Intent(android.provider.Settings.Panel.ACTION_WIFI)
+                                panelIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(panelIntent)
+                                result.success(true)
+                            } else {
+                                val wifiManager = applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+                                wifiManager.isWifiEnabled = enable
+                                result.success(true)
+                            }
+                        } catch (e: Exception) {
+                            result.success(false)
+                        }
+                    }
+
                     else -> result.notImplemented()
                 }
             }

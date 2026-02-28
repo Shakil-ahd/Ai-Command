@@ -207,7 +207,7 @@ class _AppBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI Assistant',
+                  'SakoAI',
                   style: GoogleFonts.outfit(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -239,6 +239,16 @@ class _AppBar extends StatelessWidget {
               ],
             ),
           ),
+
+          // Clear chat button
+          IconButton(
+            onPressed: () =>
+                context.read<AssistantBloc>().add(ClearChatHistoryEvent()),
+            icon: const Icon(Icons.delete_sweep_rounded, size: 22),
+            color: AppTheme.textSecondary,
+            tooltip: 'Clear Chat',
+          ),
+
           // Refresh apps button
           IconButton(
             onPressed: () =>
@@ -346,14 +356,13 @@ class _ChatList extends StatelessWidget {
       itemCount: messages.length,
       itemBuilder: (ctx, index) {
         final msg = messages[index];
-        return ChatBubble(message: msg, key: ValueKey(msg.id))
-            .animate()
-            .fadeIn(duration: 300.ms)
-            .slideY(
-                begin: 0.3,
-                end: 0,
-                duration: 300.ms,
-                curve: Curves.easeOutCubic);
+        return ChatBubble(
+          message: msg,
+          key: ValueKey(msg.id),
+          onDelete: () =>
+              context.read<AssistantBloc>().add(DeleteMessageEvent(msg.id)),
+        ).animate().fadeIn(duration: 300.ms).slideY(
+            begin: 0.3, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
       },
     );
   }

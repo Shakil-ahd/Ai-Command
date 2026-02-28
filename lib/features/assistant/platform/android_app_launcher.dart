@@ -33,7 +33,6 @@ class AndroidAppLauncher {
     }
   }
 
-  /// Launches an app by its package name.
   Future<bool> launchApp(String packageName) async {
     try {
       final bool result = await _channel.invokeMethod(
@@ -43,6 +42,24 @@ class AndroidAppLauncher {
       return result;
     } on PlatformException catch (e) {
       print('[AndroidAppLauncher] launchApp error: ${e.message}');
+      return false;
+    }
+  }
+
+  Future<bool> toggleBluetooth(bool enable) async {
+    try {
+      return await _channel.invokeMethod('toggleBluetooth', {'enable': enable});
+    } catch (e) {
+      print('[AndroidAppLauncher] toggleBluetooth e: $e');
+      return false;
+    }
+  }
+
+  Future<bool> toggleWifi(bool enable) async {
+    try {
+      return await _channel.invokeMethod('toggleWifi', {'enable': enable});
+    } catch (e) {
+      print('[AndroidAppLauncher] toggleWifi e: $e');
       return false;
     }
   }

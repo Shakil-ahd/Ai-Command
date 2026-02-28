@@ -3,34 +3,26 @@ import '../domain/entities/app_info.dart';
 import '../domain/entities/chat_message.dart';
 import '../domain/entities/contact_info.dart';
 
-// ═══════════════════════════════════════════════════════════════
-//  EVENTS
-// ═══════════════════════════════════════════════════════════════
-
 abstract class AssistantEvent extends Equatable {
   const AssistantEvent();
   @override
   List<Object?> get props => [];
 }
 
-/// Called once on startup to load installed apps & warmup.
 class AssistantInitializedEvent extends AssistantEvent {}
 
-/// User submitted a text command.
 class CommandSubmittedEvent extends AssistantEvent {
   final String command;
-  const CommandSubmittedEvent(this.command);
+  final bool isVoice;
+  const CommandSubmittedEvent(this.command, {this.isVoice = false});
   @override
-  List<Object?> get props => [command];
+  List<Object?> get props => [command, isVoice];
 }
 
-/// Voice recording started.
 class VoiceRecordingStartedEvent extends AssistantEvent {}
 
-/// Voice recording stopped.
 class VoiceRecordingStoppedEvent extends AssistantEvent {}
 
-/// Partial speech result received (live transcription).
 class SpeechPartialResultEvent extends AssistantEvent {
   final String partial;
   const SpeechPartialResultEvent(this.partial);
@@ -38,7 +30,6 @@ class SpeechPartialResultEvent extends AssistantEvent {
   List<Object?> get props => [partial];
 }
 
-/// User selected one contact from a multi-match list.
 class ContactSelectedEvent extends AssistantEvent {
   final ContactInfo contact;
   const ContactSelectedEvent(this.contact);
@@ -46,69 +37,66 @@ class ContactSelectedEvent extends AssistantEvent {
   List<Object?> get props => [contact];
 }
 
-/// User toggled TTS on/off.
 class TtsToggledEvent extends AssistantEvent {}
 
-/// User requests to refresh the app list.
 class RefreshAppsEvent extends AssistantEvent {}
 
-// ═══════════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════════
+class ClearChatHistoryEvent extends AssistantEvent {}
 
-enum AssistantStatus {
-  loading,
-  idle,
-  listening,
-  processing,
-  error,
+class DeleteMessageEvent extends AssistantEvent {
+  final String messageId;
+  const DeleteMessageEvent(this.messageId);
+  @override
+  List<Object?> get props => [messageId];
 }
+
+enum AssistantStatus { idle, listening, processing, loading, error }
 
 class AssistantState extends Equatable {
   final AssistantStatus status;
+  final String? errorMessage;
   final List<ChatMessage> messages;
   final List<AppInfo> installedApps;
   final String? partialSpeech;
   final bool ttsEnabled;
-  final String? errorMessage;
 
   const AssistantState({
     this.status = AssistantStatus.loading,
+    this.errorMessage,
     this.messages = const [],
     this.installedApps = const [],
     this.partialSpeech,
     this.ttsEnabled = true,
-    this.errorMessage,
   });
 
   AssistantState copyWith({
     AssistantStatus? status,
+    String? errorMessage,
     List<ChatMessage>? messages,
     List<AppInfo>? installedApps,
     String? partialSpeech,
     bool? ttsEnabled,
-    String? errorMessage,
-    bool clearPartial = false,
     bool clearError = false,
+    bool clearPartial = false,
   }) {
     return AssistantState(
       status: status ?? this.status,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       messages: messages ?? this.messages,
       installedApps: installedApps ?? this.installedApps,
       partialSpeech:
           clearPartial ? null : (partialSpeech ?? this.partialSpeech),
       ttsEnabled: ttsEnabled ?? this.ttsEnabled,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 
   @override
   List<Object?> get props => [
         status,
+        errorMessage,
         messages,
         installedApps,
         partialSpeech,
         ttsEnabled,
-        errorMessage,
       ];
 }

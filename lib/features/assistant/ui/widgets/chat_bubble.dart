@@ -7,8 +7,9 @@ import '../../domain/entities/chat_message.dart';
 /// A single chat bubble in the conversation.
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
+  final VoidCallback? onDelete;
 
-  const ChatBubble({required this.message, super.key});
+  const ChatBubble({required this.message, this.onDelete, super.key});
 
   bool get isUser => message.sender == MessageSender.user;
 
@@ -16,17 +17,49 @@ class ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isUser) _AssistantAvatar(),
-          if (!isUser) const SizedBox(width: 8),
-          Flexible(child: _BubbleContent(message: message, isUser: isUser)),
-          if (isUser) const SizedBox(width: 8),
-          if (isUser) _UserAvatar(),
-        ],
+      child: GestureDetector(
+        onLongPress: () {
+          if (onDelete != null) {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: AppTheme.bgElevated,
+                title: Text('Delete message?',
+                    style: GoogleFonts.outfit(color: Colors.white)),
+                content: Text('This message will be permanently removed.',
+                    style: GoogleFonts.outfit(color: Colors.white70)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('Cancel',
+                        style:
+                            GoogleFonts.outfit(color: AppTheme.textSecondary)),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      onDelete!();
+                    },
+                    child: Text('Delete',
+                        style: GoogleFonts.outfit(color: Colors.redAccent)),
+                  ),
+                ],
+              ),
+            );
+          }
+        },
+        child: Row(
+          mainAxisAlignment:
+              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isUser) _AssistantAvatar(),
+            if (!isUser) const SizedBox(width: 8),
+            Flexible(child: _BubbleContent(message: message, isUser: isUser)),
+            if (isUser) const SizedBox(width: 8),
+            if (isUser) _UserAvatar(),
+          ],
+        ),
       ),
     );
   }

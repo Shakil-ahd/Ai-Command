@@ -27,6 +27,7 @@ class SpeechService {
   Future<void> startListening({
     required void Function(String text, bool isFinal) onResult,
     required void Function() onDone,
+    required String localeId,
   }) async {
     if (!_isInitialized) {
       final ok = await initialize();
@@ -46,7 +47,7 @@ class SpeechService {
       },
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 3),
-      localeId: 'en_US',
+      localeId: localeId,
       listenOptions: SpeechListenOptions(
         partialResults: true,
         cancelOnError: false,
