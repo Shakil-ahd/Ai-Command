@@ -8,6 +8,8 @@ import 'features/assistant/bloc/assistant_event_state.dart';
 import 'features/assistant/bloc/permission_bloc.dart';
 import 'features/assistant/bloc/permission_event_state.dart';
 import 'features/assistant/ui/screens/assistant_screen.dart';
+import 'features/assistant/ui/screens/onboarding_screen.dart';
+import 'features/assistant/domain/repositories/context_repository.dart';
 import 'core/theme/app_theme.dart';
 
 void main() async {
@@ -32,11 +34,14 @@ void main() async {
   // Initialize service locator (dependency injection)
   await setupServiceLocator();
 
-  runApp(const AIAssistantApp());
+  final isFirstTime = !sl<ContextRepository>().isOnboardingCompleted();
+
+  runApp(AIAssistantApp(isFirstTime: isFirstTime));
 }
 
 class AIAssistantApp extends StatelessWidget {
-  const AIAssistantApp({super.key});
+  final bool isFirstTime;
+  const AIAssistantApp({super.key, required this.isFirstTime});
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +57,10 @@ class AIAssistantApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'AI Assistant',
+        title: 'SakoAI',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        home: const AssistantScreen(),
+        home: isFirstTime ? const OnboardingScreen() : const AssistantScreen(),
       ),
     );
   }

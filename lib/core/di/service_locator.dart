@@ -14,30 +14,30 @@ import '../../features/assistant/domain/usecases/launch_app_usecase.dart';
 import '../../features/assistant/domain/usecases/make_call_usecase.dart';
 import '../../features/assistant/domain/usecases/open_url_usecase.dart';
 import '../../features/assistant/domain/usecases/process_command_usecase.dart';
+import '../../features/assistant/domain/usecases/toggle_flashlight_usecase.dart';
 import '../../features/assistant/services/fuzzy_matcher_service.dart';
 import '../../features/assistant/services/intent_detection_service.dart';
 import '../../features/assistant/services/speech_service.dart';
 import '../../features/assistant/services/tts_service.dart';
+import '../../features/assistant/services/gemini_service.dart';
 import '../../features/assistant/platform/android_app_launcher.dart';
 
-/// Global service locator (dependency injection via get_it).
 final sl = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
-  // ── External ─────────────────────────────────────────────────────────────
   final prefs = await SharedPreferences.getInstance();
   sl.registerSingleton<SharedPreferences>(prefs);
 
-  // ── Services ─────────────────────────────────────────────────────────────
+  sl.registerLazySingleton<GeminiService>(() => GeminiService());
+
   sl.registerLazySingleton<FuzzyMatcherService>(() => FuzzyMatcherService());
   sl.registerLazySingleton<IntentDetectionService>(
-    () => IntentDetectionService(),
+    () => IntentDetectionService(sl()),
   );
   sl.registerLazySingleton<SpeechService>(() => SpeechService());
   sl.registerLazySingleton<TtsService>(() => TtsService());
   sl.registerLazySingleton<AndroidAppLauncher>(() => AndroidAppLauncher());
 
-  // ── Repositories ─────────────────────────────────────────────────────────
   sl.registerLazySingleton<AppRepository>(
     () => AppRepositoryImpl(sl()),
   );
@@ -48,7 +48,6 @@ Future<void> setupServiceLocator() async {
     () => ContextRepositoryImpl(sl()),
   );
 
-  // ── Use Cases ─────────────────────────────────────────────────────────────
   sl.registerLazySingleton<GetInstalledAppsUseCase>(
     () => GetInstalledAppsUseCase(sl()),
   );
@@ -61,19 +60,22 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<OpenUrlUseCase>(
     () => OpenUrlUseCase(),
   );
+  sl.registerLazySingleton<ToggleFlashlightUseCase>(
+    () => ToggleFlashlightUseCase(),
+  );
   sl.registerLazySingleton<ProcessCommandUseCase>(
     () => ProcessCommandUseCase(
       intentDetectionService: sl(),
       launchAppUseCase: sl(),
       makeCallUseCase: sl(),
       openUrlUseCase: sl(),
+      toggleFlashlightUseCase: sl(),
       contextRepository: sl(),
       appRepository: sl(),
       contactRepository: sl(),
     ),
   );
 
-  // ── BLoC ──────────────────────────────────────────────────────────────────
   sl.registerFactory<PermissionBloc>(() => PermissionBloc());
   sl.registerFactory<AssistantBloc>(
     () => AssistantBloc(

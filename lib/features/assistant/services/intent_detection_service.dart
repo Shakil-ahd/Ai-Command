@@ -1,11 +1,10 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../domain/entities/command_intent.dart';
+import 'gemini_service.dart';
 
-/// Detects the user's intent from raw text input.
-///
-/// This is the "AI brain" layer — currently rule-based / regex.
-/// Designed to be swapped out for Gemini API in a future upgrade.
 class IntentDetectionService {
-  // ── Pattern groups ────────────────────────────────────────────────────────
+  final GeminiService geminiService;
+
   static final _openPatterns = RegExp(
     r'\b(open|launch|start|run|show|go to|navigate to|use|activate)\b',
     caseSensitive: false,
@@ -31,28 +30,60 @@ class IntentDetectionService {
     caseSensitive: false,
   );
 
-  // Multi-command connectors
   static final _multiCommandSplitter = RegExp(
     r'\s+(and then|then|and|also|after that|next|plus)\s+',
     caseSensitive: false,
   );
 
-  IntentDetectionService();
+  static final _flashlightOnPatterns = RegExp(
+    r'\b(turn on flashlight|flashlight on|torch on|turn on torch)\b',
+    caseSensitive: false,
+  );
 
-  /// Parses [rawText] and returns the best-matching [CommandIntent].
-  CommandIntent detect(String rawText) {
+  static final _flashlightOffPatterns = RegExp(
+    r'\b(turn off flashlight|flashlight off|torch off|turn off torch)\b',
+    caseSensitive: false,
+  );
+
+  IntentDetectionService(this.geminiService);
+
+  Future<CommandIntent> detect(String rawText) async {
     final text = rawText.trim();
+    if (text.isEmpty)
+      return CommandIntent(type: IntentType.unknown, rawText: text);
 
-    // 1. Reopen check
+    // Hybrid Mode: Check Internet
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+
+    if (hasInternet) {
+      final geminiIntent = await geminiService.detectIntentWithGemini(text);
+      if (geminiIntent != null && geminiIntent.type != IntentType.unknown) {
+        return geminiIntent;
+      }
+    }
+
+    // Fallback: Local rule-based NLP
+    return _fallbackDetect(text);
+  }
+
+  CommandIntent _fallbackDetect(String text) {
     if (_reopenPatterns.hasMatch(text)) {
       return CommandIntent(type: IntentType.reopen, rawText: text);
     }
 
-    // 2. Multi-command check — split on connectors then recurse
+    if (_flashlightOnPatterns.hasMatch(text)) {
+      return CommandIntent(type: IntentType.turnOnFlashlight, rawText: text);
+    }
+
+    if (_flashlightOffPatterns.hasMatch(text)) {
+      return CommandIntent(type: IntentType.turnOffFlashlight, rawText: text);
+    }
+
     final parts = text.split(_multiCommandSplitter);
     if (parts.length > 1) {
       final subIntents = parts
-          .map((p) => detect(p.trim()))
+          .map((p) => _fallbackDetect(p.trim()))
           .where((i) => i.type != IntentType.unknown)
           .toList();
 
@@ -65,12 +96,10 @@ class IntentDetectionService {
       }
     }
 
-    // 3. URL check
     final urlMatch = _urlPattern.firstMatch(text);
     if (urlMatch != null &&
         !_openPatterns
             .hasMatch(text.split(RegExp(r'\s+url\s+|\s+link\s+')).first)) {
-      // If the text is predominantly a URL or starts/contains a URL-like string
       final isLikelyUrl = _looksLikeUrl(text);
       if (isLikelyUrl) {
         return CommandIntent(
@@ -81,7 +110,6 @@ class IntentDetectionService {
       }
     }
 
-    // 4. YouTube search
     if (_youtubeSearchPatterns.hasMatch(text)) {
       final query = _extractYouTubeQuery(text);
       if (query != null && query.isNotEmpty) {
@@ -93,7 +121,6 @@ class IntentDetectionService {
       }
     }
 
-    // 5. Call intent
     if (_callPatterns.hasMatch(text)) {
       final contactName = _extractEntityAfterVerb(text, _callPatterns);
       if (contactName != null && contactName.isNotEmpty) {
@@ -105,11 +132,9 @@ class IntentDetectionService {
       }
     }
 
-    // 6. Open/launch intent
     if (_openPatterns.hasMatch(text)) {
       final appName = _extractEntityAfterVerb(text, _openPatterns);
       if (appName != null && appName.isNotEmpty) {
-        // Check if the "app name" looks like a URL
         if (_looksLikeUrl(appName)) {
           return CommandIntent(
             type: IntentType.openUrl,
@@ -125,7 +150,6 @@ class IntentDetectionService {
       }
     }
 
-    // 7. Bare URL (no verb)
     if (urlMatch != null) {
       return CommandIntent(
         type: IntentType.openUrl,
@@ -134,34 +158,25 @@ class IntentDetectionService {
       );
     }
 
-    // 8. Unknown
     return CommandIntent(type: IntentType.unknown, rawText: text);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  /// Extracts the entity (app name or contact name) that comes after the verb.
   String? _extractEntityAfterVerb(String text, RegExp verbPattern) {
     final match = verbPattern.firstMatch(text);
     if (match == null) return null;
 
     final afterVerb = text.substring(match.end).trim();
-    // Remove filler words
     final cleaned = afterVerb
         .replaceAll(
             RegExp(r'^(the|a|an|my|that|this)\s+', caseSensitive: false), '')
         .trim();
 
-    // Take up to first punctuation or connector
     final stop = RegExp(r'\s+(and|or|then|,|\.)\s+', caseSensitive: false);
     final stopMatch = stop.firstMatch(cleaned);
     return stopMatch == null ? cleaned : cleaned.substring(0, stopMatch.start);
   }
 
-  /// Extracts the YouTube search query from text like:
-  /// "search flutter tutorial on youtube" → "flutter tutorial"
   String? _extractYouTubeQuery(String text) {
-    // Pattern: search <query> on youtube
     final pattern1 = RegExp(
       r'\b(?:search|find|look up|look for|play|watch)\s+(.+?)\s+(?:on|in|via|using|at)?\s*youtube\b',
       caseSensitive: false,
@@ -169,7 +184,6 @@ class IntentDetectionService {
     final m1 = pattern1.firstMatch(text);
     if (m1 != null) return m1.group(1)?.trim();
 
-    // Pattern: youtube search for <query>
     final pattern2 = RegExp(
       r'\byoutube\b.{0,20}(?:search|find)?\s*(?:for|about)?\s+(.+)',
       caseSensitive: false,
