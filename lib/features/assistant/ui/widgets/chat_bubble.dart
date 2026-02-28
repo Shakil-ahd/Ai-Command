@@ -1,137 +1,236 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/chat_message.dart';
 
-/// A single chat bubble in the conversation.
-class ChatBubble extends StatelessWidget {
+class ChatBubble extends StatefulWidget {
   final ChatMessage message;
   final VoidCallback? onDelete;
 
   const ChatBubble({required this.message, this.onDelete, super.key});
 
-  bool get isUser => message.sender == MessageSender.user;
+  @override
+  State<ChatBubble> createState() => _ChatBubbleState();
+}
+
+class _ChatBubbleState extends State<ChatBubble> {
+  bool get isUser => widget.message.sender == MessageSender.user;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: GestureDetector(
-        onLongPress: () {
-          if (onDelete != null) {
-            showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                backgroundColor: AppTheme.bgElevated,
-                title: Text('Delete message?',
-                    style: GoogleFonts.outfit(color: Colors.white)),
-                content: Text('This message will be permanently removed.',
-                    style: GoogleFonts.outfit(color: Colors.white70)),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text('Cancel',
-                        style:
-                            GoogleFonts.outfit(color: AppTheme.textSecondary)),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      onDelete!();
-                    },
-                    child: Text('Delete',
-                        style: GoogleFonts.outfit(color: Colors.redAccent)),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
-        child: Row(
-          mainAxisAlignment:
-              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!isUser) _AssistantAvatar(),
-            if (!isUser) const SizedBox(width: 8),
-            Flexible(child: _BubbleContent(message: message, isUser: isUser)),
-            if (isUser) const SizedBox(width: 8),
-            if (isUser) _UserAvatar(),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) _AssistantAvatar(),
+          if (!isUser) const SizedBox(width: 8),
+          Flexible(
+            child: isUser
+                ? _UserBubble(message: widget.message)
+                : _AssistantBubble(message: widget.message),
+          ),
+          if (isUser) const SizedBox(width: 8),
+          if (isUser) _UserAvatar(),
+        ],
       ),
     );
   }
 }
 
-class _BubbleContent extends StatelessWidget {
+// ── User bubble (static, no animation needed) ──────────────────
+class _UserBubble extends StatelessWidget {
   final ChatMessage message;
-  final bool isUser;
-
-  const _BubbleContent({required this.message, required this.isUser});
+  const _UserBubble({required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.75,
-      ),
+      constraints:
+          BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        gradient: isUser ? AppTheme.primaryGradient : null,
-        color: isUser ? null : AppTheme.bgElevated,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(18),
-          topRight: const Radius.circular(18),
-          bottomLeft: Radius.circular(isUser ? 18 : 4),
-          bottomRight: Radius.circular(isUser ? 4 : 18),
+        gradient: AppTheme.primaryGradient,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
+          bottomLeft: Radius.circular(18),
+          bottomRight: Radius.circular(4),
         ),
-        border: isUser
-            ? null
-            : Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.2),
-                width: 1,
-              ),
         boxShadow: [
           BoxShadow(
-            color: isUser
-                ? AppTheme.primaryColor.withOpacity(0.25)
-                : Colors.black38,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: AppTheme.primaryColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SelectableText(
+          Text(
             message.text,
             style: GoogleFonts.outfit(
               fontSize: 14.5,
-              color: isUser ? Colors.white : AppTheme.textPrimary,
+              color: Colors.white,
               height: 1.55,
-              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             _formatTime(message.timestamp),
-            style: GoogleFonts.outfit(
-              fontSize: 10,
-              color: isUser ? Colors.white54 : AppTheme.textHint,
-            ),
+            style: GoogleFonts.outfit(fontSize: 10, color: Colors.white54),
           ),
         ],
       ),
     );
   }
 
-  String _formatTime(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+  String _formatTime(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+}
+
+// ── Assistant bubble with typewriter animation ──────────────────
+class _AssistantBubble extends StatefulWidget {
+  final ChatMessage message;
+  const _AssistantBubble({required this.message});
+
+  @override
+  State<_AssistantBubble> createState() => _AssistantBubbleState();
+}
+
+class _AssistantBubbleState extends State<_AssistantBubble> {
+  String _displayedText = '';
+  bool _animationDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.message.shouldAnimate) {
+      _startTypewriter();
+    } else {
+      _displayedText = widget.message.text;
+      _animationDone = true;
+    }
+  }
+
+  void _startTypewriter() async {
+    final words = widget.message.text.split(' ');
+    final buffer = StringBuffer();
+    for (final word in words) {
+      if (!mounted) return;
+      buffer.write('$word ');
+      setState(() => _displayedText = buffer.toString().trimRight());
+      await Future.delayed(const Duration(milliseconds: 40));
+    }
+    if (mounted) setState(() => _animationDone = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints:
+          BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.bgElevated,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
+          bottomLeft: Radius.circular(4),
+          bottomRight: Radius.circular(18),
+        ),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.22),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black45, blurRadius: 8, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _displayedText,
+            style: GoogleFonts.outfit(
+              fontSize: 14.5,
+              color: AppTheme.textPrimary,
+              height: 1.6,
+            ),
+          ),
+          if (!_animationDone)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _BlinkCursor(),
+            ),
+          if (_animationDone)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _formatTime(widget.message.timestamp),
+                style:
+                    GoogleFonts.outfit(fontSize: 10, color: AppTheme.textHint),
+              ),
+            ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 200.ms)
+        .slideX(begin: -0.05, end: 0, duration: 200.ms);
+  }
+
+  String _formatTime(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+}
+
+// Blinking cursor like ChatGPT
+class _BlinkCursor extends StatefulWidget {
+  @override
+  State<_BlinkCursor> createState() => _BlinkCursorState();
+}
+
+class _BlinkCursorState extends State<_BlinkCursor>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Opacity(
+        opacity: _ctrl.value,
+        child: Container(
+          width: 2,
+          height: 15,
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -146,9 +245,7 @@ class _AssistantAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.4),
-            blurRadius: 8,
-          ),
+              color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 8),
         ],
       ),
       child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),

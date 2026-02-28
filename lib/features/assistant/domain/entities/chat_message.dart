@@ -7,6 +7,7 @@ class ChatMessage extends Equatable {
   final MessageSender sender;
   final DateTime timestamp;
   final MessageStatus status;
+  final bool shouldAnimate;
 
   const ChatMessage({
     required this.id,
@@ -14,11 +15,13 @@ class ChatMessage extends Equatable {
     required this.sender,
     required this.timestamp,
     this.status = MessageStatus.delivered,
+    this.shouldAnimate = false,
   });
 
   ChatMessage copyWith({
     String? text,
     MessageStatus? status,
+    bool? shouldAnimate,
   }) {
     return ChatMessage(
       id: id,
@@ -26,6 +29,7 @@ class ChatMessage extends Equatable {
       sender: sender,
       timestamp: timestamp,
       status: status ?? this.status,
+      shouldAnimate: shouldAnimate ?? this.shouldAnimate,
     );
   }
 
@@ -36,6 +40,7 @@ class ChatMessage extends Equatable {
       'sender': sender.name,
       'timestamp': timestamp.toIso8601String(),
       'status': status.name,
+      'shouldAnimate': shouldAnimate,
     };
   }
 
@@ -52,11 +57,13 @@ class ChatMessage extends Equatable {
         (e) => e.name == json['status'],
         orElse: () => MessageStatus.delivered,
       ),
+      shouldAnimate: json['shouldAnimate'] as bool? ?? false,
     );
   }
 
   @override
-  List<Object?> get props => [id, text, sender, timestamp, status];
+  List<Object?> get props =>
+      [id, text, sender, timestamp, status, shouldAnimate];
 }
 
 enum MessageSender { user, assistant }

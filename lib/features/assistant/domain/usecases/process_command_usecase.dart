@@ -39,12 +39,13 @@ class ProcessCommandUseCase {
 
   Future<CommandResponse> call(String rawCommand) async {
     await _warmupCaches();
-    final intent = await intentDetectionService.detect(rawCommand);
+    final intent = await intentDetectionService.detect(
+      rawCommand,
+      installedApps: _cachedApps ?? [],
+    );
     final response = await _executeIntent(intent);
 
     if (intent.replyText != null && intent.replyText!.isNotEmpty) {
-      // Optionally you can replace the success message entirely, or just return the replyText.
-      // It's safer to just return a response where the primary message is replyText.
       if (response.success && response.contactChoices == null) {
         return CommandResponse.success(intent.replyText!,
             launchedApp: response.launchedApp);
@@ -120,13 +121,7 @@ class ProcessCommandUseCase {
             intent.replyText ?? 'Hello! I am SakoAI.');
 
       case IntentType.unknown:
-        return CommandResponse.error(
-          '🤔 I didn\'t understand that. Try:\n'
-          '• "open whatsapp"\n'
-          '• "call mom"\n'
-          '• "search flutter on youtube"\n'
-          '• "turn on flashlight"',
-        );
+        return CommandResponse.error('Sorry, I didn\'t understand that.');
     }
   }
 
@@ -182,13 +177,27 @@ class ProcessCommandUseCase {
   }
 
   Future<CommandResponse> _handleYouTubeSearch(String query) async {
+    String finalQuery = query;
+
+    finalQuery = finalQuery
+        .replaceAll(RegExp(r'\s+on\s+(youtube|yt)', caseSensitive: false), '')
+        .trim();
+
     final searchUrl =
-        'https://www.youtube.com/results?search_query=${Uri.encodeComponent(query)}';
+        'https://www.youtube.com/results?search_query=${Uri.encodeComponent(finalQuery)}';
+
+    final isMoodSearch = RegExp(
+            r'\b(sad|romantic|funny|natok|cartoon|special)\b',
+            caseSensitive: false)
+        .hasMatch(finalQuery);
+
     final result = await openUrlUseCase(searchUrl);
-    await contextRepository.saveLastSearchQuery(query);
+    await contextRepository.saveLastSearchQuery(finalQuery);
 
     if (result is Success<String>) {
-      return CommandResponse.success('▶️ Searching YouTube for "$query"');
+      return CommandResponse.success(isMoodSearch
+          ? '▶️ Finding a $finalQuery for you on YouTube...'
+          : '▶️ Searching YouTube for "$finalQuery"');
     } else if (result is Failure<String>) {
       return CommandResponse.error(result.message);
     }
@@ -238,7 +247,28 @@ class ProcessCommandUseCase {
         action = 'android.settings.BLUETOOTH_SETTINGS';
         break;
       case 'display':
+      case 'brightness':
         action = 'android.settings.DISPLAY_SETTINGS';
+        break;
+      case 'airplane_mode':
+      case 'flight_mode':
+        action = 'android.settings.AIRPLANE_MODE_SETTINGS';
+        break;
+      case 'location':
+      case 'gps':
+        action = 'android.settings.LOCATION_SOURCE_SETTINGS';
+        break;
+      case 'mobile_data':
+      case 'data':
+        action = 'android.settings.DATA_ROAMING_SETTINGS';
+        break;
+      case 'hotspot':
+      case 'tethering':
+        action = 'android.settings.WIRELESS_SETTINGS';
+        break;
+      case 'sound':
+      case 'volume':
+        action = 'android.settings.SOUND_SETTINGS';
         break;
       default:
         action = 'android.settings.SETTINGS';
@@ -260,17 +290,19 @@ class ProcessCommandUseCase {
 
     if (setting == 'wifi') {
       success = await launcher.toggleWifi(enable);
+      if (success)
+        return CommandResponse.success(enable
+            ? '📶 Opening Wi-Fi settings to turn on...'
+            : '📶 Opening Wi-Fi settings to turn off...');
     } else if (setting == 'bluetooth') {
       success = await launcher.toggleBluetooth(enable);
+      if (success)
+        return CommandResponse.success(enable
+            ? '🔵 Turning on Bluetooth...'
+            : '🔵 Turning off Bluetooth...');
     }
 
-    if (success) {
-      if (enable) return CommandResponse.success('✅ Turned on $setting.');
-      return CommandResponse.success('☑️ Turned off $setting.');
-    } else {
-      // Fallback: Open settings for that
-      return _handleOpenSettings(setting);
-    }
+    return _handleOpenSettings(setting);
   }
 
   Future<CommandResponse> _handleOpenCamera() async {

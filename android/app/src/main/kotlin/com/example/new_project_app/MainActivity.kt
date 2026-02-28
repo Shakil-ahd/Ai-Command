@@ -54,13 +54,23 @@ class MainActivity : FlutterActivity() {
                     "toggleBluetooth" -> {
                         val enable = call.argument<Boolean>("enable") ?: true
                         try {
-                            val bluetoothAdapter: android.bluetooth.BluetoothAdapter? = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
-                            if (enable) {
-                                bluetoothAdapter?.enable()
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                // Android 13+ requires system panel — open Bluetooth settings panel
+                                val panelIntent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                                panelIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(panelIntent)
+                                result.success(true)
                             } else {
-                                bluetoothAdapter?.disable()
+                                val bluetoothAdapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+                                if (enable) {
+                                    @Suppress("DEPRECATION")
+                                    bluetoothAdapter?.enable()
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    bluetoothAdapter?.disable()
+                                }
+                                result.success(true)
                             }
-                            result.success(true)
                         } catch (e: Exception) {
                             result.success(false)
                         }
@@ -70,12 +80,15 @@ class MainActivity : FlutterActivity() {
                         val enable = call.argument<Boolean>("enable") ?: true
                         try {
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                // Android 10+ requires user interaction via Settings Panel
                                 val panelIntent = Intent(android.provider.Settings.Panel.ACTION_WIFI)
                                 panelIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 startActivity(panelIntent)
                                 result.success(true)
                             } else {
+                                @Suppress("DEPRECATION")
                                 val wifiManager = applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+                                @Suppress("DEPRECATION")
                                 wifiManager.isWifiEnabled = enable
                                 result.success(true)
                             }
