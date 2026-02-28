@@ -86,6 +86,25 @@ class _AssistantScreenState extends State<AssistantScreen>
                   child: BlocConsumer<AssistantBloc, AssistantState>(
                     listener: (ctx, state) {
                       _scrollToBottom();
+                      if (state.notificationMessage != null) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              state.notificationMessage!,
+                              style: GoogleFonts.outfit(color: Colors.white),
+                            ),
+                            backgroundColor: AppTheme.bgSurface,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                        context
+                            .read<AssistantBloc>()
+                            .add(ClearNotificationEvent());
+                      }
                     },
                     builder: (ctx, state) {
                       if (state.status == AssistantStatus.loading) {

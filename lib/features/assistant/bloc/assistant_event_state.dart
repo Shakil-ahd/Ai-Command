@@ -11,6 +11,16 @@ abstract class AssistantEvent extends Equatable {
 
 class AssistantInitializedEvent extends AssistantEvent {}
 
+class CallEndedEvent extends AssistantEvent {}
+
+class IncomingCallEvent extends AssistantEvent {
+  final String callerName;
+  const IncomingCallEvent({required this.callerName});
+
+  @override
+  List<Object?> get props => [callerName];
+}
+
 class CommandSubmittedEvent extends AssistantEvent {
   final String command;
   final bool isVoice;
@@ -41,6 +51,8 @@ class TtsToggledEvent extends AssistantEvent {}
 
 class RefreshAppsEvent extends AssistantEvent {}
 
+class ClearNotificationEvent extends AssistantEvent {}
+
 class ClearChatHistoryEvent extends AssistantEvent {}
 
 class DeleteMessageEvent extends AssistantEvent {
@@ -59,6 +71,7 @@ class AssistantState extends Equatable {
   final List<AppInfo> installedApps;
   final String? partialSpeech;
   final bool ttsEnabled;
+  final String? notificationMessage;
 
   const AssistantState({
     this.status = AssistantStatus.loading,
@@ -67,6 +80,7 @@ class AssistantState extends Equatable {
     this.installedApps = const [],
     this.partialSpeech,
     this.ttsEnabled = true,
+    this.notificationMessage,
   });
 
   AssistantState copyWith({
@@ -76,8 +90,10 @@ class AssistantState extends Equatable {
     List<AppInfo>? installedApps,
     String? partialSpeech,
     bool? ttsEnabled,
+    String? notificationMessage,
     bool clearError = false,
     bool clearPartial = false,
+    bool clearNotification = false,
   }) {
     return AssistantState(
       status: status ?? this.status,
@@ -87,6 +103,9 @@ class AssistantState extends Equatable {
       partialSpeech:
           clearPartial ? null : (partialSpeech ?? this.partialSpeech),
       ttsEnabled: ttsEnabled ?? this.ttsEnabled,
+      notificationMessage: clearNotification
+          ? null
+          : (notificationMessage ?? this.notificationMessage),
     );
   }
 
@@ -98,5 +117,6 @@ class AssistantState extends Equatable {
         installedApps,
         partialSpeech,
         ttsEnabled,
+        notificationMessage,
       ];
 }

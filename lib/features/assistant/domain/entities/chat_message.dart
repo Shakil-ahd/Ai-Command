@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'contact_info.dart';
 
 /// Represents a single user ↔ assistant message in the chat.
 class ChatMessage extends Equatable {
@@ -8,6 +9,7 @@ class ChatMessage extends Equatable {
   final DateTime timestamp;
   final MessageStatus status;
   final bool shouldAnimate;
+  final List<ContactInfo>? contactChoices;
 
   const ChatMessage({
     required this.id,
@@ -16,12 +18,14 @@ class ChatMessage extends Equatable {
     required this.timestamp,
     this.status = MessageStatus.delivered,
     this.shouldAnimate = false,
+    this.contactChoices,
   });
 
   ChatMessage copyWith({
     String? text,
     MessageStatus? status,
     bool? shouldAnimate,
+    List<ContactInfo>? contactChoices,
   }) {
     return ChatMessage(
       id: id,
@@ -30,6 +34,7 @@ class ChatMessage extends Equatable {
       timestamp: timestamp,
       status: status ?? this.status,
       shouldAnimate: shouldAnimate ?? this.shouldAnimate,
+      contactChoices: contactChoices ?? this.contactChoices,
     );
   }
 
@@ -41,6 +46,12 @@ class ChatMessage extends Equatable {
       'timestamp': timestamp.toIso8601String(),
       'status': status.name,
       'shouldAnimate': shouldAnimate,
+      'contactChoices': contactChoices
+          ?.map((c) => {
+                'name': c.name,
+                'phoneNumber': c.phoneNumber,
+              })
+          .toList(),
     };
   }
 
@@ -58,12 +69,18 @@ class ChatMessage extends Equatable {
         orElse: () => MessageStatus.delivered,
       ),
       shouldAnimate: json['shouldAnimate'] as bool? ?? false,
+      contactChoices: (json['contactChoices'] as List?)
+          ?.map((c) => ContactInfo(
+                name: c['name'],
+                phoneNumber: c['phoneNumber'],
+              ))
+          .toList(),
     );
   }
 
   @override
   List<Object?> get props =>
-      [id, text, sender, timestamp, status, shouldAnimate];
+      [id, text, sender, timestamp, status, shouldAnimate, contactChoices];
 }
 
 enum MessageSender { user, assistant }
