@@ -118,7 +118,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
       ));
       await contextRepository.saveMessages(finalMessages);
 
-      if (state.ttsEnabled && event.isVoice) {
+      if (state.ttsEnabled) {
         ttsService.speak(
             response.message.replaceAll(RegExp(r'[✅📞❌▶️🌐📱👋•🤔❓🔦]'), ''));
       }
@@ -163,7 +163,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     emit(state.copyWith(status: AssistantStatus.listening));
 
     await speechService.startListening(
-      localeId: 'en_US',
+      localeId: '', // Empty string makes it use the device's default locale
       onResult: (text, isFinal) {
         if (isFinal && text.isNotEmpty) {
           add(CommandSubmittedEvent(text, isVoice: true));
