@@ -62,7 +62,7 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
                     shape: BoxShape.circle,
                     border: Border.all(
                       color:
-                          AppTheme.accentColor.withOpacity(0.2 - pulse * 0.1),
+                          AppTheme.accentColor.withValues(alpha: 0.2 - pulse * 0.1),
                       width: 2,
                     ),
                   ),
@@ -84,7 +84,7 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(
+                      color: AppTheme.primaryColor.withValues(alpha: 
                           widget.isActive ? 0.5 + pulse * 0.3 : 0.3),
                       blurRadius: widget.isActive ? 30 + pulse * 10 : 15,
                       spreadRadius: widget.isActive ? 5 : 2,

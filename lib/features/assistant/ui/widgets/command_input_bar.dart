@@ -34,7 +34,7 @@ class CommandInputBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.bgCard,
         border: Border(
-          top: BorderSide(color: AppTheme.primaryColor.withOpacity(0.15)),
+          top: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
         ),
       ),
       child: Row(
@@ -57,8 +57,8 @@ class CommandInputBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isListening
-                      ? AppTheme.accentColor.withOpacity(0.6)
-                      : AppTheme.primaryColor.withOpacity(0.25),
+                      ? AppTheme.accentColor.withValues(alpha: 0.6)
+                      : AppTheme.primaryColor.withValues(alpha: 0.25),
                   width: isListening ? 1.5 : 1,
                 ),
               ),
@@ -83,7 +83,7 @@ class CommandInputBar extends StatelessWidget {
                             isListening ? 'Listening…' : 'Type a command…',
                         hintStyle: GoogleFonts.outfit(
                           color: isListening
-                              ? AppTheme.accentColor.withOpacity(0.7)
+                              ? AppTheme.accentColor.withValues(alpha: 0.7)
                               : AppTheme.textHint,
                           fontStyle: FontStyle.italic,
                         ),
@@ -168,9 +168,9 @@ class _IconBtn extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Icon(icon, color: color, size: 20),
         ),
@@ -205,7 +205,7 @@ class _VoiceButton extends StatelessWidget {
               color: (isListening
                       ? const Color(0xFFFF4081)
                       : AppTheme.primaryColor)
-                  .withOpacity(0.45),
+                  .withValues(alpha: 0.45),
               blurRadius: isListening ? 20 : 10,
               spreadRadius: isListening ? 4 : 0,
             ),

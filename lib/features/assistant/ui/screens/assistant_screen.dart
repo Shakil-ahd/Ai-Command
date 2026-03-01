@@ -209,7 +209,7 @@ class _AppBar extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primaryColor
-                        .withOpacity(0.3 + pulseController.value * 0.2),
+                        .withValues(alpha: 0.3 + pulseController.value * 0.2),
                     blurRadius: 12 + pulseController.value * 8,
                     spreadRadius: 1 + pulseController.value * 2,
                   ),
@@ -296,7 +296,7 @@ class _LoadingView extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
                   blurRadius: 30,
                   spreadRadius: 5,
                 ),
@@ -379,7 +379,7 @@ class _PartialSpeechPreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.bgSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.accentColor.withOpacity(0.4)),
+        border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -444,7 +444,7 @@ class _PermissionOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.bgDeep.withOpacity(0.95),
+      color: AppTheme.bgDeep.withValues(alpha: 0.95),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -455,10 +455,10 @@ class _PermissionOverlay extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.5), width: 2),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.5), width: 2),
                 ),
                 child: const Icon(Icons.mic_rounded,
                     color: AppTheme.primaryColor, size: 36),
@@ -552,7 +552,7 @@ class _BgPainter extends CustomPainter {
       double yFrac, double radius, double alpha) {
     final paint = Paint()
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 80)
-      ..color = color.withOpacity(0.08 + alpha * 0.06);
+      ..color = color.withValues(alpha: 0.08 + alpha * 0.06);
 
     canvas.drawCircle(
       Offset(size.width * xFrac, size.height * yFrac),
@@ -590,8 +590,8 @@ class _SuggestionChips extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ActionChip(
-              backgroundColor: AppTheme.bgSurface.withOpacity(0.8),
-              side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.3)),
+              backgroundColor: AppTheme.bgSurface.withValues(alpha: 0.8),
+              side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

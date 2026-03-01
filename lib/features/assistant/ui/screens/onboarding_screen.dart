@@ -92,10 +92,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                   blurRadius: 40,
                   spreadRadius: 5,
                 ),
@@ -155,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             elevation: 8,
-            shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+            shadowColor: AppTheme.primaryColor.withValues(alpha: 0.4),
           ),
           onPressed: _finishOnboarding,
           child: Row(

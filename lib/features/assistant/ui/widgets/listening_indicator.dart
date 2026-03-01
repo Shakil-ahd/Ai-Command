@@ -41,11 +41,11 @@ class _ListeningIndicatorState extends State<ListeningIndicator>
         color: AppTheme.bgSurface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.accentColor.withOpacity(0.35),
+          color: AppTheme.accentColor.withValues(alpha: 0.35),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.accentColor.withOpacity(0.1),
+            color: AppTheme.accentColor.withValues(alpha: 0.1),
             blurRadius: 16,
           ),
         ],

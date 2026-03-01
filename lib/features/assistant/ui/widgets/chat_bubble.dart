@@ -67,7 +67,7 @@ class _UserBubble extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -149,7 +149,7 @@ class _AssistantBubbleState extends State<_AssistantBubble> {
           bottomRight: Radius.circular(18),
         ),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.22),
+          color: AppTheme.primaryColor.withValues(alpha: 0.22),
           width: 1,
         ),
         boxShadow: [
@@ -251,7 +251,7 @@ class _AssistantAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 8),
+              color: AppTheme.primaryColor.withValues(alpha: 0.4), blurRadius: 8),
         ],
       ),
       child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
@@ -268,7 +268,7 @@ class _UserAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.bgElevated,
         shape: BoxShape.circle,
-        border: Border.all(color: AppTheme.accentColor.withOpacity(0.4)),
+        border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.4)),
       ),
       child: const Icon(Icons.person_rounded,
           color: AppTheme.accentColor, size: 18),
@@ -291,12 +291,12 @@ class _ContactChoicesList extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.bgSurface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
             ),
             child: ListTile(
               dense: true,
               leading: CircleAvatar(
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 child: const Icon(Icons.person_rounded,
                     color: AppTheme.primaryColor, size: 18),
               ),
