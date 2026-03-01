@@ -3,15 +3,11 @@ import '../repositories/app_repository.dart';
 import '../../services/fuzzy_matcher_service.dart';
 import '../../../../core/utils/result.dart';
 
-/// Launches an app by name using fuzzy matching against installed apps.
 class LaunchAppUseCase {
   final AppRepository _appRepository;
   final FuzzyMatcherService _fuzzyMatcher;
 
   LaunchAppUseCase(this._appRepository, this._fuzzyMatcher);
-
-  /// [appName] is the human-supplied name (may be misspelled).
-  /// [installedApps] is the cached list; if null, we fetch fresh.
   Future<Result<AppInfo>> call({
     required String appName,
     List<AppInfo>? installedApps,
@@ -22,8 +18,6 @@ class LaunchAppUseCase {
       if (apps.isEmpty) {
         return const Failure('No apps found on device');
       }
-
-      // Find best match using fuzzy matching
       final match = _fuzzyMatcher.findBestAppMatch(appName, apps);
 
       if (match == null) {

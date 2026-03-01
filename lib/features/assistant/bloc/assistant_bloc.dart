@@ -49,8 +49,6 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     final apps = result is Success ? (result as Success).data : [];
 
     speechService.initialize();
-
-    // Listen for call state from native
     const MethodChannel('com.assistant/call_state')
         .setMethodCallHandler((call) async {
       if (call.method == 'onCallEnded') {
@@ -163,7 +161,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     emit(state.copyWith(status: AssistantStatus.listening));
 
     await speechService.startListening(
-      localeId: '', // Empty string makes it use the device's default locale
+      localeId: '',
       onResult: (text, isFinal) {
         if (isFinal && text.isNotEmpty) {
           add(CommandSubmittedEvent(text, isVoice: true));
@@ -199,8 +197,6 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     Emitter<AssistantState> emit,
   ) async {
     final contact = event.contact;
-
-    // 1. Log the selection in chat
     final userMsg = _makeUserMessage('Call ${contact.name}');
     List<ChatMessage> updated = [...state.messages, userMsg];
 
@@ -209,8 +205,6 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
       messages: updated,
     ));
     await contextRepository.saveMessages(updated);
-
-    // 2. Perform the direct call
     try {
       await processCommandUseCase.makeCallUseCase.callExact(contact);
 

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
-/// Decorative pulsing orb (imported but optional for splash/header use).
 class VoiceOrb extends StatefulWidget {
   final bool isActive;
   final double size;
@@ -53,7 +52,6 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Outer ring
               if (widget.isActive)
                 Container(
                   width: widget.size + 20 + pulse * 20,
@@ -61,14 +59,12 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color:
-                          AppTheme.accentColor.withValues(alpha: 0.2 - pulse * 0.1),
+                      color: AppTheme.accentColor
+                          .withValues(alpha: 0.2 - pulse * 0.1),
                       width: 2,
                     ),
                   ),
                 ),
-
-              // Inner orb
               Container(
                 width: widget.size,
                 height: widget.size,
@@ -84,8 +80,8 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 
-                          widget.isActive ? 0.5 + pulse * 0.3 : 0.3),
+                      color: AppTheme.primaryColor.withValues(
+                          alpha: widget.isActive ? 0.5 + pulse * 0.3 : 0.3),
                       blurRadius: widget.isActive ? 30 + pulse * 10 : 15,
                       spreadRadius: widget.isActive ? 5 : 2,
                     ),

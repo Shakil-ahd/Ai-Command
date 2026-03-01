@@ -1,10 +1,8 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents an installed Android application.
 class AppInfo extends Equatable {
-  final String name; // Human-readable display name
-  final String
-      packageName; // Unique package identifier, e.g. com.facebook.katana
+  final String name;
+  final String packageName;
   final bool isSystemApp;
 
   const AppInfo({
@@ -12,8 +10,6 @@ class AppInfo extends Equatable {
     required this.packageName,
     this.isSystemApp = false,
   });
-
-  /// Normalized lowercase name for fuzzy matching.
   String get normalizedName => name.toLowerCase().trim();
 
   @override

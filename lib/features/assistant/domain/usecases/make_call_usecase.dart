@@ -3,7 +3,6 @@ import '../repositories/contact_repository.dart';
 import '../../services/fuzzy_matcher_service.dart';
 import '../../../../core/utils/result.dart';
 
-/// Result type for call actions — may yield multiple matches.
 sealed class CallResult {}
 
 class CallSuccess extends CallResult {
@@ -26,7 +25,6 @@ class CallError extends CallResult {
   CallError(this.message);
 }
 
-/// Makes a phone call using fuzzy contact matching.
 class MakeCallUseCase {
   final ContactRepository _contactRepository;
   final FuzzyMatcherService _fuzzyMatcher;
@@ -46,8 +44,6 @@ class MakeCallUseCase {
       }
 
       final matches = _fuzzyMatcher.findContactMatches(contactName, contacts);
-
-      // Check if the input is already a number
       final isNumber = RegExp(r'^\+?[0-9]{5,}$')
           .hasMatch(contactName.replaceAll(RegExp(r'[\s\-\(\)]'), ''));
 
@@ -65,15 +61,12 @@ class MakeCallUseCase {
         await _contactRepository.makeCall(matches.first.phoneNumber);
         return CallSuccess(matches.first);
       }
-
-      // Multiple matches — let user pick
       return CallMultipleMatches(matches);
     } catch (e) {
       return CallError('Error making call: $e');
     }
   }
 
-  /// Call a specific contact (after user selection from multiple matches).
   Future<Result<ContactInfo>> callExact(ContactInfo contact) async {
     try {
       await _contactRepository.makeCall(contact.phoneNumber);

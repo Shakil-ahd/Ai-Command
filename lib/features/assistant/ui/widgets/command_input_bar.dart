@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
-/// The bottom input bar with text field, voice button, and TTS toggle.
 class CommandInputBar extends StatelessWidget {
   final TextEditingController textController;
   final FocusNode focusNode;
@@ -39,7 +38,6 @@ class CommandInputBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // TTS toggle
           _IconBtn(
             icon:
                 ttsEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
@@ -48,8 +46,6 @@ class CommandInputBar extends StatelessWidget {
             onTap: onTtsToggle,
           ),
           const SizedBox(width: 8),
-
-          // Text field
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -95,7 +91,6 @@ class CommandInputBar extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Send button (only when text is present)
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: textController,
                     builder: (_, val, __) {
@@ -132,8 +127,6 @@ class CommandInputBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-
-          // Voice button
           _VoiceButton(
             isListening: isListening,
             onTap: onVoiceTap,

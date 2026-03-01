@@ -1,14 +1,8 @@
 import 'package:flutter/services.dart';
 import '../domain/entities/app_info.dart';
 
-/// Communicates with the native Android side via a MethodChannel
-/// to query installed apps and launch them by package name.
-///
-/// The corresponding Kotlin handler is in MainActivity.kt.
 class AndroidAppLauncher {
   static const _channel = MethodChannel('com.assistant/app_launcher');
-
-  /// Returns a list of all installed (non-system) apps.
   Future<List<AppInfo>> getInstalledApps(
       {bool includeSystemApps = false}) async {
     try {
@@ -27,7 +21,6 @@ class AndroidAppLauncher {
           .where((app) => app.name.isNotEmpty && app.packageName.isNotEmpty)
           .toList();
     } on PlatformException catch (e) {
-      // Log and return empty list — app continues gracefully
       print('[AndroidAppLauncher] getInstalledApps error: ${e.message}');
       return [];
     }

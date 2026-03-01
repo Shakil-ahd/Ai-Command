@@ -4,7 +4,6 @@ import '../../domain/entities/contact_info.dart';
 import '../../domain/repositories/contact_repository.dart';
 import '../../platform/android_app_launcher.dart';
 
-/// Implements [ContactRepository] using the flutter_contacts package.
 class ContactRepositoryImpl implements ContactRepository {
   @override
   Future<List<ContactInfo>> getContacts() async {
@@ -31,14 +30,10 @@ class ContactRepositoryImpl implements ContactRepository {
   Future<bool> makeCall(String phoneNumber) async {
     final cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
     if (cleaned.isEmpty) return false;
-
-    // Try direct call first (no dialer)
     try {
       final success = await AndroidAppLauncher().directCall(cleaned);
       if (success) return true;
     } catch (_) {}
-
-    // Fallback to standard dialer
     final uri = Uri.parse('tel:$cleaned');
     try {
       final success = await launchUrl(

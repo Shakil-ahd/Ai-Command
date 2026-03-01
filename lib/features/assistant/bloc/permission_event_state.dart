@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-// ── Events ────────────────────────────────────────────────────────────────────
-
 abstract class PermissionEvent extends Equatable {
   const PermissionEvent();
   @override
@@ -13,8 +11,6 @@ class CheckPermissionsEvent extends PermissionEvent {}
 class RequestPermissionsEvent extends PermissionEvent {}
 
 class OpenAppSettingsEvent extends PermissionEvent {}
-
-// ── States ────────────────────────────────────────────────────────────────────
 
 class PermissionState extends Equatable {
   final bool micGranted;

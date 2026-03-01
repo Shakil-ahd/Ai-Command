@@ -1,17 +1,12 @@
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/result.dart';
 
-/// Opens URLs intelligently:
-/// - YouTube links → YouTube app (or browser fallback)
-/// - Other links   → default browser
 class OpenUrlUseCase {
   OpenUrlUseCase();
 
   Future<Result<String>> call(String url) async {
     try {
       String cleanUrl = url.trim();
-
-      // Ensure protocol prefix, but allow custom schemes like spotify:
       final hasScheme =
           RegExp(r'^[a-z0-9]+:', caseSensitive: false).hasMatch(cleanUrl);
       if (!hasScheme) {
@@ -22,7 +17,6 @@ class OpenUrlUseCase {
       final isYouTubeSearch = _isYouTubeSearchUrl(uri);
 
       if (isYouTubeSearch) {
-        // Build youtube:// deep link to open YouTube app directly
         final query = uri.queryParameters['search_query'] ?? '';
         if (query.isNotEmpty) {
           final ytAppUri = Uri.parse(
@@ -33,15 +27,12 @@ class OpenUrlUseCase {
             return const Success('Opened in YouTube app');
           }
         }
-        // Fallback: open YouTube in browser
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
           return Success('Opened YouTube in browser');
         }
         return Failure('Cannot open YouTube');
       }
-
-      // For all other YouTube links (watch, etc.)
       if (_isYouTubeUrl(uri)) {
         final videoId = uri.queryParameters['v'];
         if (videoId != null) {
@@ -53,8 +44,6 @@ class OpenUrlUseCase {
           }
         }
       }
-
-      // Fallback to external browser
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         return Success('Opened: $cleanUrl');

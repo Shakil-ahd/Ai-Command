@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'permission_event_state.dart';
 
-/// Manages runtime permission checks and requests.
 class PermissionBloc extends Bloc<PermissionEvent, PermissionState> {
   PermissionBloc() : super(const PermissionState()) {
     on<CheckPermissionsEvent>(_onCheck);

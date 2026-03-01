@@ -458,7 +458,8 @@ class _PermissionOverlay extends StatelessWidget {
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.5), width: 2),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                      width: 2),
                 ),
                 child: const Icon(Icons.mic_rounded,
                     color: AppTheme.primaryColor, size: 36),
@@ -591,7 +592,8 @@ class _SuggestionChips extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8),
             child: ActionChip(
               backgroundColor: AppTheme.bgSurface.withValues(alpha: 0.8),
-              side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+              side: BorderSide(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

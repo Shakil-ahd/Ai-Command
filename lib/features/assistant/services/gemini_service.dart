@@ -62,8 +62,6 @@ User command: "$command"
 
       final response = await model.generateContent([Content.text(prompt)]);
       final resultText = response.text?.trim() ?? '';
-
-      // Extract JSON using robust RegExp in case Gemini includes conversational filler
       String jsonStr = resultText;
       final jsonBlockRegex = RegExp(r'\{.*\}', dotAll: true);
       final match = jsonBlockRegex.firstMatch(resultText);
@@ -73,8 +71,6 @@ User command: "$command"
       }
 
       final Map<String, dynamic> json = jsonDecode(jsonStr.trim());
-
-      // Parse subCommands manually if present
       if (json['type'] == 'multiCommand' && json['subCommands'] is List) {
         final subs = (json['subCommands'] as List)
             .map((e) =>

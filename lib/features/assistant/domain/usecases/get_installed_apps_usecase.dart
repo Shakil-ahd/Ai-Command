@@ -2,7 +2,6 @@ import '../entities/app_info.dart';
 import '../repositories/app_repository.dart';
 import '../../../../core/utils/result.dart';
 
-/// Fetches all installed apps from the device.
 class GetInstalledAppsUseCase {
   final AppRepository _repository;
 

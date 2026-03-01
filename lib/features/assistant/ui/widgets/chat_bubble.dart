@@ -46,7 +46,6 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 }
 
-// ── User bubble (static, no animation needed) ──────────────────
 class _UserBubble extends StatelessWidget {
   final ChatMessage message;
   const _UserBubble({required this.message});
@@ -98,7 +97,6 @@ class _UserBubble extends StatelessWidget {
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-// ── Assistant bubble with typewriter animation ──────────────────
 class _AssistantBubble extends StatefulWidget {
   final ChatMessage message;
   const _AssistantBubble({required this.message});
@@ -196,7 +194,6 @@ class _AssistantBubbleState extends State<_AssistantBubble> {
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-// Blinking cursor like ChatGPT
 class _BlinkCursor extends StatefulWidget {
   @override
   State<_BlinkCursor> createState() => _BlinkCursorState();
@@ -251,7 +248,8 @@ class _AssistantAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.4), blurRadius: 8),
+              color: AppTheme.primaryColor.withValues(alpha: 0.4),
+              blurRadius: 8),
         ],
       ),
       child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
@@ -291,7 +289,8 @@ class _ContactChoicesList extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.bgSurface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+              border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3)),
             ),
             child: ListTile(
               dense: true,

@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'contact_info.dart';
 
-/// Represents a single user ↔ assistant message in the chat.
 class ChatMessage extends Equatable {
   final String id;
   final String text;

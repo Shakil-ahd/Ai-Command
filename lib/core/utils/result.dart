@@ -1,4 +1,3 @@
-/// Sealed result type for use-case responses.
 sealed class Result<T> {
   const Result();
 }

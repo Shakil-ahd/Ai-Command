@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// App-wide theme configuration.
-/// Uses a deep space / cyberpunk-inspired dark theme with electric blue accents.
 class AppTheme {
   AppTheme._();
+  static const Color primaryColor = Color(0xFF6C63FF);
+  static const Color accentColor = Color(0xFF00D4FF);
+  static const Color successColor = Color(0xFF00E676);
+  static const Color errorColor = Color(0xFFFF5252);
+  static const Color warningColor = Color(0xFFFFD600);
 
-  // ── Colour palette ──────────────────────────────────────────────────────
-  static const Color primaryColor = Color(0xFF6C63FF); // Electric violet
-  static const Color accentColor = Color(0xFF00D4FF); // Cyan accent
-  static const Color successColor = Color(0xFF00E676); // Green success
-  static const Color errorColor = Color(0xFFFF5252); // Red error
-  static const Color warningColor = Color(0xFFFFD600); // Amber warning
-
-  static const Color bgDeep = Color(0xFF080818); // Darkest bg
-  static const Color bgCard = Color(0xFF0F0F2A); // Card bg
-  static const Color bgSurface = Color(0xFF161630); // Surface bg
-  static const Color bgElevated = Color(0xFF1E1E3F); // Elevated bg
+  static const Color bgDeep = Color(0xFF080818);
+  static const Color bgCard = Color(0xFF0F0F2A);
+  static const Color bgSurface = Color(0xFF161630);
+  static const Color bgElevated = Color(0xFF1E1E3F);
 
   static const Color textPrimary = Color(0xFFEEEEFF);
   static const Color textSecondary = Color(0xFF9090BB);
@@ -33,8 +29,6 @@ class AppTheme {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-
-  // ── ThemeData ────────────────────────────────────────────────────────────
   static ThemeData get darkTheme {
     final base = ThemeData.dark(useMaterial3: true);
     final textTheme = GoogleFonts.outfitTextTheme(base.textTheme).apply(

@@ -2,7 +2,6 @@ import '../../domain/entities/app_info.dart';
 import '../../domain/repositories/app_repository.dart';
 import '../../platform/android_app_launcher.dart';
 
-/// Implements [AppRepository] using the native Android MethodChannel.
 class AppRepositoryImpl implements AppRepository {
   final AndroidAppLauncher _launcher;
 

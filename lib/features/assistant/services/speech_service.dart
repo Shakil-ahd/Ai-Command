@@ -1,7 +1,6 @@
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
-/// Wraps the speech_to_text plugin with a clean, reactive API.
 class SpeechService {
   final SpeechToText _stt = SpeechToText();
 
@@ -10,8 +9,6 @@ class SpeechService {
 
   bool get isListening => _isListening;
   bool get isAvailable => _isInitialized;
-
-  /// Initializes the speech recognizer. Must be called before [startListening].
   Future<bool> initialize() async {
     if (_isInitialized) return true;
     _isInitialized = await _stt.initialize(
@@ -22,8 +19,6 @@ class SpeechService {
     return _isInitialized;
   }
 
-  /// Starts listening and calls [onResult] with each intermediate/final result.
-  /// [onDone] is called when listening stops.
   Future<void> startListening({
     required void Function(String text, bool isFinal) onResult,
     required void Function() onDone,
@@ -56,7 +51,6 @@ class SpeechService {
     );
   }
 
-  /// Stops listening.
   Future<void> stopListening() async {
     if (_isListening) {
       await _stt.stop();
@@ -64,7 +58,6 @@ class SpeechService {
     }
   }
 
-  /// Cancels listening without returning a result.
   Future<void> cancelListening() async {
     await _stt.cancel();
     _isListening = false;

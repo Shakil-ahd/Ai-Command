@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
-/// Animated listening indicator shown while voice is active.
 class ListeningIndicator extends StatefulWidget {
   const ListeningIndicator({super.key});
 
@@ -53,7 +52,6 @@ class _ListeningIndicatorState extends State<ListeningIndicator>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Animated waveform bars
           AnimatedBuilder(
             animation: _controller,
             builder: (_, __) {

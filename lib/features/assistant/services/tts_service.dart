@@ -1,11 +1,10 @@
 import 'package:flutter_tts/flutter_tts.dart';
 
-/// Wraps flutter_tts for text-to-speech output.
 class TtsService {
   final FlutterTts _tts = FlutterTts();
 
   bool _isSpeaking = false;
-  bool _isEnabled = true; // User can toggle TTS on/off
+  bool _isEnabled = true;
 
   bool get isSpeaking => _isSpeaking;
   bool get isEnabled => _isEnabled;
