@@ -171,7 +171,8 @@ class _AssistantBubbleState extends State<_AssistantBubble> {
               padding: const EdgeInsets.only(top: 6),
               child: _BlinkCursor(),
             ),
-          if (_animationDone)
+          if (_animationDone &&
+              !widget.message.text.startsWith('Hi, I am SakoAI'))
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
