@@ -1,22 +1,17 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import '../../../../core/constants/api_constants.dart';
-import '../domain/entities/command_intent.dart';
+import 'lib/core/constants/api_constants.dart';
 
-class GeminiService {
-  GeminiService();
+void main() async {
+  try {
+    String apiKey = ApiConstants.geminiApiKey;
+    print('API key length: ' + apiKey.length.toString());
+    final model = GenerativeModel(
+      model: 'gemini-1.5-flash',
+      apiKey: apiKey,
+    );
 
-  Future<CommandIntent?> detectIntentWithGemini(String command) async {
-    try {
-      String apiKey = ApiConstants.geminiApiKey;
-      if (apiKey == 'YOUR_GEMINI_API_KEY_HERE' || apiKey.isEmpty) return null;
-
-      final model = GenerativeModel(
-        model: 'gemini-2.5-flash',
-        apiKey: apiKey,
-      );
-
-      final prompt = '''
+    final prompt = '''
 You are "SakoAI", an intelligent smartphone assistant. The user will give you a command. The command may be in English, Bengali (বাংলা), or Banglish (Bengali written in English letters).
 Determine the intent of the user's command and return a raw JSON object ONLY! No markdown, no comments, no extra text.
 
@@ -57,40 +52,13 @@ Return: {"type": "clearChat", "replyText": "Chat cleared."}
 Example user command: "open facebook"
 Return: {"type": "openApp", "targetAppName": "facebook", "replyText": "Opening facebook."}
 
-User command: "$command"
+User command: "youtube open koro"
 ''';
 
-      final response = await model.generateContent([Content.text(prompt)]);
-      final resultText = response.text?.trim() ?? '';
-      String jsonStr = resultText;
-      final jsonBlockRegex = RegExp(r'\{.*\}', dotAll: true);
-      final match = jsonBlockRegex.firstMatch(resultText);
-
-      if (match != null) {
-        jsonStr = match.group(0)!;
-      }
-
-      final Map<String, dynamic> json = jsonDecode(jsonStr.trim());
-      if (json['type'] == 'multiCommand' && json['subCommands'] is List) {
-        final subs = (json['subCommands'] as List)
-            .map((e) =>
-                CommandIntent.fromJson(e as Map<String, dynamic>, command))
-            .toList();
-        return CommandIntent(
-            type: IntentType.multiCommand, rawText: command, subCommands: subs);
-      }
-
-      return CommandIntent.fromJson(json, command);
-    } catch (e) {
-      print('[GeminiService] Error: \$e');
-      if (e.toString().toLowerCase().contains('quota')) {
-        return CommandIntent(
-            type: IntentType.generalChat,
-            rawText: command,
-            replyText:
-                'আপনার Gemini API Key এর ফ্রি লিমিট (কোটা) শেষ হয়ে গেছে। দয়া করে Google AI Studio থেকে নতুন একটি API Key তৈরি করে অ্যাপে যুক্ত করুন।');
-      }
-      return null;
-    }
+    final response = await model.generateContent([Content.text(prompt)]);
+    final resultText = response.text?.trim() ?? '';
+    print('Raw Output: ' + resultText);
+  } catch (e) {
+    print('Error: ' + e.toString());
   }
 }
