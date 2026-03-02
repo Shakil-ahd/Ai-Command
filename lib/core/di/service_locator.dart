@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/assistant/bloc/assistant_bloc.dart';
 import '../../features/assistant/bloc/permission_bloc.dart';
+import '../../features/assistant/bloc/theme_bloc.dart';
 import '../../features/assistant/data/repositories/app_repository_impl.dart';
 import '../../features/assistant/data/repositories/contact_repository_impl.dart';
 import '../../features/assistant/data/repositories/context_repository_impl.dart';
@@ -76,6 +77,7 @@ Future<void> setupServiceLocator() async {
     ),
   );
 
+  sl.registerFactory<ThemeBloc>(() => ThemeBloc(prefs: sl()));
   sl.registerFactory<PermissionBloc>(() => PermissionBloc());
   sl.registerFactory<AssistantBloc>(
     () => AssistantBloc(

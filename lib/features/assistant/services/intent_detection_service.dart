@@ -92,6 +92,94 @@ class IntentDetectionService {
       r'\b(clear chat|delete chat|delete messages|clear all chat|clear history)\b',
       caseSensitive: false);
 
+  static final _banglishOpenPatterns = RegExp(
+      r'\b(kholo|khola|kholun|open koro|open kor|on koro|on kor|calu koro|chalu koro|start koro|start kor)\b',
+      caseSensitive: false);
+
+  static final _banglishCallPatterns = RegExp(
+      r'\b(call koro|call kor|call de|call dao|phone koro|phone kor|ke call koro|ke call kor|ke phone koro)\b',
+      caseSensitive: false);
+
+  static final _banglishFlashlightOnPatterns = RegExp(
+      r'\b(torch on koro|torch on kor|light on koro|light on kor|flashlight on koro|flashlight on kor|torch jala|torch jalo|light jala|light jalo|aloh jala|aloh jalo|alo jala|alo jalo|torch chalao|torch calu koro|torch chalu koro)\b',
+      caseSensitive: false);
+
+  static final _banglishFlashlightOffPatterns = RegExp(
+      r'\b(torch off koro|torch off kor|light off koro|light off kor|flashlight off koro|flashlight off kor|torch niva|torch nibhao|light niva|light nibhao|torch bondho koro|torch bondho kor|light bondho koro|light bondho kor)\b',
+      caseSensitive: false);
+
+  static final _banglishWifiOnPatterns = RegExp(
+      r'\b(wifi on koro|wifi on kor|wifi calu koro|wifi chalu koro|wifi chalao|wifi daw)\b',
+      caseSensitive: false);
+
+  static final _banglishWifiOffPatterns = RegExp(
+      r'\b(wifi off koro|wifi off kor|wifi bondho koro|wifi bondho kor|wifi band koro)\b',
+      caseSensitive: false);
+
+  static final _banglishBluetoothOnPatterns = RegExp(
+      r'\b(bluetooth on koro|bluetooth on kor|bluetooth calu koro|bluetooth chalu koro|bluetooth chalao)\b',
+      caseSensitive: false);
+
+  static final _banglishBluetoothOffPatterns = RegExp(
+      r'\b(bluetooth off koro|bluetooth off kor|bluetooth bondho koro|bluetooth bondho kor|bluetooth band koro)\b',
+      caseSensitive: false);
+
+  static final _banglishCameraPatterns = RegExp(
+      r'\b(camera kholo|camera khola|camera open koro|camera on koro|photo tolo|photo tola|photo uthao|picture tolo|picture tola)\b',
+      caseSensitive: false);
+
+  static final _banglishClearChatPatterns = RegExp(
+      r'\b(chat clear koro|chat delete koro|chat moche felo|chat moche dao|chat sesh koro|chat shesh koro|chat porishshar koro|chat porishkar koro)\b',
+      caseSensitive: false);
+
+  static final _banglishYoutubePatterns = RegExp(
+      r'\b(youtube e|youtube te|youtube theke|youtube search koro|youtube kholo|youtube open koro)\b',
+      caseSensitive: false);
+
+  static final _banglishReopenPatterns = RegExp(
+      r'\b(abar kholo|abar open koro|ager ta kholo|again kholo|ager ta open koro)\b',
+      caseSensitive: false);
+
+  static final _banglaFlashlightOnPatterns = RegExp(
+      r'(টর্চ অন|টর্চ জ্বালাও|আলো জ্বালাও|ফ্লাশলাইট অন|লাইট অন|টর্চ চালু|আলো চালু)',
+      caseSensitive: false);
+
+  static final _banglaFlashlightOffPatterns = RegExp(
+      r'(টর্চ অফ|টর্চ নেভাও|আলো নেভাও|ফ্লাশলাইট অফ|লাইট অফ|টর্চ বন্ধ|আলো বন্ধ)',
+      caseSensitive: false);
+
+  static final _banglaWifiOnPatterns = RegExp(
+      r'(ওয়াইফাই অন|ওয়াইফাই চালু|ওয়াই-ফাই অন|ওয়াই-ফাই চালু|wifi অন|wifi চালু)',
+      caseSensitive: false);
+
+  static final _banglaWifiOffPatterns = RegExp(
+      r'(ওয়াইফাই অফ|ওয়াইফাই বন্ধ|ওয়াই-ফাই অফ|ওয়াই-ফাই বন্ধ|wifi অফ|wifi বন্ধ)',
+      caseSensitive: false);
+
+  static final _banglaBluetoothOnPatterns = RegExp(
+      r'(ব্লুটুথ অন|ব্লুটুথ চালু|bluetooth অন|bluetooth চালু)',
+      caseSensitive: false);
+
+  static final _banglaBluetoothOffPatterns = RegExp(
+      r'(ব্লুটুথ অফ|ব্লুটুথ বন্ধ|bluetooth অফ|bluetooth বন্ধ)',
+      caseSensitive: false);
+
+  static final _banglaCameraPatterns = RegExp(
+      r'(ক্যামেরা খোলো|ক্যামেরা ওপেন|ছবি তোলো|ফটো তোলো)',
+      caseSensitive: false);
+
+  static final _banglaOpenPatterns = RegExp(
+      r'(খোলো|খুলুন|ওপেন কর|ওপেন করো|চালু কর|চালু করো|স্টার্ট কর)',
+      caseSensitive: false);
+
+  static final _banglaCallPatterns = RegExp(
+      r'(কল কর|কল করো|ফোন কর|ফোন করো|কল দাও|কে কল কর|কে ফোন কর)',
+      caseSensitive: false);
+
+  static final _banglaClearChatPatterns = RegExp(
+      r'(চ্যাট ক্লিয়ার|চ্যাট ডিলিট|চ্যাট মুছে ফেল|চ্যাট পরিষ্কার)',
+      caseSensitive: false);
+
   IntentDetectionService(this.geminiService);
 
   static const Map<String, String> _aliases = {
@@ -127,10 +215,16 @@ class IntentDetectionService {
     final musicIntent = _detectMusicPlatformIntent(text);
     if (musicIntent != null) return musicIntent;
 
+    final banglishIntent = _detectBanglishIntent(text);
+    if (banglishIntent != null) return banglishIntent;
+
+    final banglaIntent = _detectBanglaIntent(text);
+    if (banglaIntent != null) return banglaIntent;
+
     final connectivityResult = await Connectivity().checkConnectivity();
     final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
 
-    if (hasInternet) {
+    if (hasInternet && !geminiService.isQuotaExhausted) {
       final geminiIntent = await geminiService.detectIntentWithGemini(text);
       if (geminiIntent != null && geminiIntent.type != IntentType.unknown) {
         return geminiIntent;
@@ -146,7 +240,282 @@ class IntentDetectionService {
       if (appIntent != null) return appIntent;
     }
 
+    if (!hasInternet) {
+      return CommandIntent(
+        type: IntentType.generalChat,
+        rawText: text,
+        replyText:
+            '📵 ইন্টারনেট সংযোগ নেই। তবে আমি অফলাইনেও অ্যাপ খোলা, কল করা, ফ্ল্যাশলাইট, ওয়াইফাই, ব্লুটুথ ইত্যাদি নিয়ন্ত্রণ করতে পারি!\n\nNo internet connection. But I can still open apps, make calls, and control flashlight, WiFi, Bluetooth offline!',
+      );
+    }
+
+    if (geminiService.isQuotaExhausted) {
+      return CommandIntent(
+        type: IntentType.generalChat,
+        rawText: text,
+        replyText:
+            '⚠️ API লিমিট শেষ হয়ে গেছে। তবে আমি এখনও অ্যাপ খোলা, কল করা, YouTube সার্চ, ফ্ল্যাশলাইট, ওয়াইফাই, ব্লুটুথ, ক্যামেরা, সেটিংস ইত্যাদি সব কাজ করতে পারি!\n\n'
+            'শুধু AI চ্যাট (প্রশ্ন-উত্তর) এর জন্য API key দরকার।\n\n'
+            'API limit exceeded. But I can still open apps, make calls, search YouTube, control flashlight, WiFi, Bluetooth, camera, settings and more!\n\n'
+            'Only AI chat (Q&A) needs the API key.',
+      );
+    }
+
     return CommandIntent(type: IntentType.unknown, rawText: text);
+  }
+
+  CommandIntent? _detectBanglishIntent(String text) {
+    final lower = text.toLowerCase().trim();
+
+    if (_banglishFlashlightOnPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.turnOnFlashlight,
+          rawText: text,
+          replyText: 'টর্চ জ্বালাচ্ছি...');
+    }
+    if (_banglishFlashlightOffPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.turnOffFlashlight,
+          rawText: text,
+          replyText: 'টর্চ বন্ধ করছি...');
+    }
+
+    if (_banglishWifiOnPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.turnOnWifi,
+          rawText: text,
+          replyText: 'WiFi চালু করছি...');
+    }
+    if (_banglishWifiOffPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.turnOffWifi,
+          rawText: text,
+          replyText: 'WiFi বন্ধ করছি...');
+    }
+
+    if (_banglishBluetoothOnPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.turnOnBluetooth,
+          rawText: text,
+          replyText: 'Bluetooth চালু করছি...');
+    }
+    if (_banglishBluetoothOffPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.turnOffBluetooth,
+          rawText: text,
+          replyText: 'Bluetooth বন্ধ করছি...');
+    }
+
+    if (_banglishCameraPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.openCamera,
+          rawText: text,
+          replyText: 'ক্যামেরা খুলছি...');
+    }
+
+    if (_banglishClearChatPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.clearChat,
+          rawText: text,
+          replyText: 'চ্যাট ক্লিয়ার করছি...');
+    }
+
+    if (_banglishReopenPatterns.hasMatch(lower)) {
+      return CommandIntent(
+          type: IntentType.reopen, rawText: text, replyText: 'আবার খুলছি...');
+    }
+
+    if (_banglishYoutubePatterns.hasMatch(lower)) {
+      final query = _extractBanglishYoutubeQuery(lower);
+      if (query != null && query.isNotEmpty) {
+        return CommandIntent(
+            type: IntentType.youtubeSearch,
+            rawText: text,
+            searchQuery: query,
+            replyText: 'YouTube এ "$query" খুঁজছি...');
+      }
+      return CommandIntent(
+          type: IntentType.openApp,
+          rawText: text,
+          targetAppName: 'YouTube',
+          replyText: 'YouTube খুলছি...');
+    }
+
+    if (_banglishCallPatterns.hasMatch(lower)) {
+      final contact = _extractBanglishCallTarget(lower);
+      if (contact != null && contact.isNotEmpty) {
+        return CommandIntent(
+            type: IntentType.makeCall,
+            rawText: text,
+            targetContact: contact,
+            replyText: '$contact কে কল করছি...');
+      }
+    }
+
+    if (_banglishOpenPatterns.hasMatch(lower)) {
+      final appName = _extractBanglishAppName(lower);
+      if (appName != null && appName.isNotEmpty) {
+        return CommandIntent(
+            type: IntentType.openApp,
+            rawText: text,
+            targetAppName: appName,
+            replyText: '$appName খুলছি...');
+      }
+    }
+
+    return null;
+  }
+
+  CommandIntent? _detectBanglaIntent(String text) {
+    if (_banglaFlashlightOnPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.turnOnFlashlight,
+          rawText: text,
+          replyText: 'টর্চ জ্বালাচ্ছি...');
+    }
+    if (_banglaFlashlightOffPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.turnOffFlashlight,
+          rawText: text,
+          replyText: 'টর্চ বন্ধ করছি...');
+    }
+
+    if (_banglaWifiOnPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.turnOnWifi,
+          rawText: text,
+          replyText: 'ওয়াইফাই চালু করছি...');
+    }
+    if (_banglaWifiOffPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.turnOffWifi,
+          rawText: text,
+          replyText: 'ওয়াইফাই বন্ধ করছি...');
+    }
+
+    if (_banglaBluetoothOnPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.turnOnBluetooth,
+          rawText: text,
+          replyText: 'ব্লুটুথ চালু করছি...');
+    }
+    if (_banglaBluetoothOffPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.turnOffBluetooth,
+          rawText: text,
+          replyText: 'ব্লুটুথ বন্ধ করছি...');
+    }
+
+    if (_banglaCameraPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.openCamera,
+          rawText: text,
+          replyText: 'ক্যামেরা খুলছি...');
+    }
+
+    if (_banglaClearChatPatterns.hasMatch(text)) {
+      return CommandIntent(
+          type: IntentType.clearChat,
+          rawText: text,
+          replyText: 'চ্যাট ক্লিয়ার করছি...');
+    }
+
+    if (_banglaCallPatterns.hasMatch(text)) {
+      final contact = text
+          .replaceAll(
+              RegExp(
+                  r'(কল কর|কল করো|ফোন কর|ফোন করো|কল দাও|কে কল কর|কে ফোন কর)'),
+              '')
+          .trim();
+      if (contact.isNotEmpty) {
+        return CommandIntent(
+            type: IntentType.makeCall,
+            rawText: text,
+            targetContact: contact,
+            replyText: '$contact কে কল করছি...');
+      }
+    }
+
+    if (_banglaOpenPatterns.hasMatch(text)) {
+      final appName = text
+          .replaceAll(
+              RegExp(
+                  r'(খোলো|খুলুন|ওপেন কর|ওপেন করো|চালু কর|চালু করো|স্টার্ট কর)'),
+              '')
+          .trim();
+      if (appName.isNotEmpty) {
+        return CommandIntent(
+            type: IntentType.openApp,
+            rawText: text,
+            targetAppName: appName,
+            replyText: '$appName খুলছি...');
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractBanglishYoutubeQuery(String text) {
+    final patterns = [
+      RegExp(
+          r'youtube\s+(?:e|te|theke)\s+(.+?)(?:\s+(?:khojo|search koro|dekhao|dekha|play koro))?$',
+          caseSensitive: false),
+      RegExp(r'youtube\s+search\s+koro\s+(.+)', caseSensitive: false),
+      RegExp(r'youtube\s+(?:e|te)\s+(.+)', caseSensitive: false),
+    ];
+
+    for (final p in patterns) {
+      final m = p.firstMatch(text);
+      if (m != null) {
+        final q = m.group(1)?.trim() ?? '';
+        if (q.isNotEmpty) return q;
+      }
+    }
+    return null;
+  }
+
+  String? _extractBanglishCallTarget(String text) {
+    final patterns = [
+      RegExp(r'(?:call|phone)\s+(?:koro|kor|de|dao)\s+(.+)',
+          caseSensitive: false),
+      RegExp(r'(.+?)\s+ke\s+(?:call|phone)\s+(?:koro|kor|de|dao)',
+          caseSensitive: false),
+    ];
+
+    for (final p in patterns) {
+      final m = p.firstMatch(text);
+      if (m != null) {
+        final name = m.group(1)?.trim() ?? '';
+        if (name.isNotEmpty) return name;
+      }
+    }
+    return null;
+  }
+
+  String? _extractBanglishAppName(String text) {
+    final patterns = [
+      RegExp(
+          r'(.+?)\s+(?:kholo|khola|kholun|open koro|open kor|on koro|on kor|calu koro|chalu koro|start koro|start kor)',
+          caseSensitive: false),
+      RegExp(
+          r'(?:kholo|khola|kholun|open koro|open kor|on koro|on kor|calu koro|chalu koro|start koro|start kor)\s+(.+)',
+          caseSensitive: false),
+    ];
+
+    for (final p in patterns) {
+      final m = p.firstMatch(text);
+      if (m != null) {
+        final name = m.group(1)?.trim() ?? '';
+        final cleaned = name
+            .replaceAll(
+                RegExp(r'\b(amake|ami|please|plz|pls|ektu|ta|er)\b',
+                    caseSensitive: false),
+                '')
+            .trim();
+        if (cleaned.isNotEmpty) return cleaned;
+      }
+    }
+    return null;
   }
 
   String _stripFiller(String text) {
@@ -300,8 +669,8 @@ class IntentDetectionService {
             '• "Light on", "WiFi off", "Bluetooth on"\n'
             '• "Open Camera" or "Location settings"\n'
             '• "Brightness up" or "Airplane mode"\n\n'
-            'Just type or tap the mic to start!'
-            'Finally BOOMS....',
+            'Banglish: "Facebook kholo", "torch on koro", "wifi off koro"\n\n'
+            'Just type or tap the mic to start!',
       );
     }
 

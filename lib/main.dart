@@ -7,6 +7,8 @@ import 'features/assistant/bloc/assistant_bloc.dart';
 import 'features/assistant/bloc/assistant_event_state.dart';
 import 'features/assistant/bloc/permission_bloc.dart';
 import 'features/assistant/bloc/permission_event_state.dart';
+import 'features/assistant/bloc/theme_bloc.dart';
+import 'features/assistant/bloc/theme_event_state.dart';
 import 'features/assistant/ui/screens/assistant_screen.dart';
 import 'features/assistant/ui/screens/onboarding_screen.dart';
 import 'features/assistant/domain/repositories/context_repository.dart';
@@ -44,6 +46,9 @@ class SakoAIApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<ThemeBloc>(
+          create: (_) => sl<ThemeBloc>()..add(ThemeLoadEvent()),
+        ),
         BlocProvider<PermissionBloc>(
           create: (_) => sl<PermissionBloc>()..add(CheckPermissionsEvent()),
         ),
@@ -51,11 +56,17 @@ class SakoAIApp extends StatelessWidget {
           create: (_) => sl<AssistantBloc>()..add(AssistantInitializedEvent()),
         ),
       ],
-      child: MaterialApp(
-        title: 'SakoAI',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        home: isFirstTime ? const OnboardingScreen() : const AssistantScreen(),
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, themeState) {
+          return MaterialApp(
+            title: 'SakoAI',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.darkTheme,
+            home: isFirstTime
+                ? const OnboardingScreen()
+                : const AssistantScreen(),
+          );
+        },
       ),
     );
   }

@@ -269,8 +269,7 @@ class _UserAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.4)),
       ),
-      child: const Icon(Icons.person_rounded,
-          color: AppTheme.accentColor, size: 18),
+      child: Icon(Icons.person_rounded, color: AppTheme.accentColor, size: 18),
     );
   }
 }
@@ -297,7 +296,7 @@ class _ContactChoicesList extends StatelessWidget {
               dense: true,
               leading: CircleAvatar(
                 backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-                child: const Icon(Icons.person_rounded,
+                child: Icon(Icons.person_rounded,
                     color: AppTheme.primaryColor, size: 18),
               ),
               title: Text(

@@ -8,10 +8,13 @@ import '../../bloc/assistant_bloc.dart';
 import '../../bloc/assistant_event_state.dart';
 import '../../bloc/permission_bloc.dart';
 import '../../bloc/permission_event_state.dart';
+import '../../bloc/theme_bloc.dart';
+import '../../bloc/theme_event_state.dart';
 import '../../domain/entities/chat_message.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/command_input_bar.dart';
 import '../widgets/listening_indicator.dart';
+import '../widgets/menu_drawer.dart';
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -25,6 +28,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late AnimationController _bgController;
   late AnimationController _pulseController;
@@ -73,150 +77,166 @@ class _AssistantScreenState extends State<AssistantScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.bgDeep,
-      body: Stack(
-        children: [
-          _AnimatedBackground(controller: _bgController),
-          SafeArea(
-            child: Column(
-              children: [
-                _AppBar(pulseController: _pulseController),
-                Expanded(
-                  child: BlocConsumer<AssistantBloc, AssistantState>(
-                    listener: (ctx, state) {
-                      _scrollToBottom();
-                      if (state.notificationMessage != null) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              state.notificationMessage!,
-                              style: GoogleFonts.outfit(color: Colors.white),
-                            ),
-                            backgroundColor: AppTheme.bgSurface,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                        context
-                            .read<AssistantBloc>()
-                            .add(ClearNotificationEvent());
-                      }
-                    },
-                    builder: (ctx, state) {
-                      if (state.status == AssistantStatus.loading) {
-                        return const _LoadingView();
-                      }
-                      return Column(
-                        children: [
-                          Expanded(
-                            child: _ChatList(
-                              messages: state.messages,
-                              scrollController: _scrollController,
-                            ),
-                          ),
-                          if (state.partialSpeech != null &&
-                              state.partialSpeech!.isNotEmpty)
-                            _PartialSpeechPreview(text: state.partialSpeech!),
-                          if (state.status == AssistantStatus.listening)
-                            const ListeningIndicator(),
-                          if (state.status == AssistantStatus.processing)
-                            const _ProcessingDots(),
-                          if (state.status == AssistantStatus.idle)
-                            _SuggestionChips(
-                              onTap: (text) {
-                                context
-                                    .read<AssistantBloc>()
-                                    .add(CommandSubmittedEvent(text));
-                              },
-                            ),
-                          CommandInputBar(
-                            textController: _textController,
-                            focusNode: _focusNode,
-                            isListening:
-                                state.status == AssistantStatus.listening,
-                            isProcessing:
-                                state.status == AssistantStatus.processing,
-                            ttsEnabled: state.ttsEnabled,
-                            onSubmit: (text) {
-                              context
-                                  .read<AssistantBloc>()
-                                  .add(CommandSubmittedEvent(text));
-                              _textController.clear();
-                            },
-                            onVoiceTap: () {
-                              final bloc = context.read<AssistantBloc>();
-                              if (state.status == AssistantStatus.listening) {
-                                bloc.add(VoiceRecordingStoppedEvent());
-                              } else {
-                                bloc.add(VoiceRecordingStartedEvent());
-                              }
-                            },
-                            onTtsToggle: () {
-                              context
-                                  .read<AssistantBloc>()
-                                  .add(TtsToggledEvent());
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, themeState) {
+        return Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: AppTheme.bgDeep,
+          drawer: const MenuDrawer(),
+          drawerEdgeDragWidth: 40,
+          body: Stack(
+            children: [
+              _AnimatedBackground(controller: _bgController),
+              SafeArea(
+                child: Column(
+                  children: [
+                    _AppBar(
+                      pulseController: _pulseController,
+                      onMenuTap: () {
+                        _scaffoldKey.currentState?.openDrawer();
+                      },
+                    ),
+                    Expanded(
+                      child: BlocConsumer<AssistantBloc, AssistantState>(
+                        listener: (ctx, state) {
+                          _scrollToBottom();
+                          if (state.notificationMessage != null) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  state.notificationMessage!,
+                                  style:
+                                      GoogleFonts.outfit(color: Colors.white),
+                                ),
+                                backgroundColor: AppTheme.bgSurface,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                            context
+                                .read<AssistantBloc>()
+                                .add(ClearNotificationEvent());
+                          }
+                        },
+                        builder: (ctx, state) {
+                          if (state.status == AssistantStatus.loading) {
+                            return const _LoadingView();
+                          }
+                          return Column(
+                            children: [
+                              Expanded(
+                                child: _ChatList(
+                                  messages: state.messages,
+                                  scrollController: _scrollController,
+                                ),
+                              ),
+                              if (state.partialSpeech != null &&
+                                  state.partialSpeech!.isNotEmpty)
+                                _PartialSpeechPreview(
+                                    text: state.partialSpeech!),
+                              if (state.status == AssistantStatus.listening)
+                                const ListeningIndicator(),
+                              if (state.status == AssistantStatus.processing)
+                                const _ProcessingDots(),
+                              if (state.status == AssistantStatus.idle)
+                                _SuggestionChips(
+                                  onTap: (text) {
+                                    context
+                                        .read<AssistantBloc>()
+                                        .add(CommandSubmittedEvent(text));
+                                  },
+                                ),
+                              CommandInputBar(
+                                textController: _textController,
+                                focusNode: _focusNode,
+                                isListening:
+                                    state.status == AssistantStatus.listening,
+                                isProcessing:
+                                    state.status == AssistantStatus.processing,
+                                ttsEnabled: state.ttsEnabled,
+                                onSubmit: (text) {
+                                  context
+                                      .read<AssistantBloc>()
+                                      .add(CommandSubmittedEvent(text));
+                                  _textController.clear();
+                                },
+                                onVoiceTap: () {
+                                  final bloc = context.read<AssistantBloc>();
+                                  if (state.status ==
+                                      AssistantStatus.listening) {
+                                    bloc.add(VoiceRecordingStoppedEvent());
+                                  } else {
+                                    bloc.add(VoiceRecordingStartedEvent());
+                                  }
+                                },
+                                onTtsToggle: () {
+                                  context
+                                      .read<AssistantBloc>()
+                                      .add(TtsToggledEvent());
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              BlocBuilder<PermissionBloc, PermissionState>(
+                builder: (ctx, permState) {
+                  if (permState.isChecking) return const SizedBox.shrink();
+                  if (!permState.micGranted) {
+                    return _PermissionOverlay(
+                      onGrant: () => context
+                          .read<PermissionBloc>()
+                          .add(RequestPermissionsEvent()),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
-          BlocBuilder<PermissionBloc, PermissionState>(
-            builder: (ctx, permState) {
-              if (permState.isChecking) return const SizedBox.shrink();
-              if (!permState.micGranted) {
-                return _PermissionOverlay(
-                  onGrant: () => context
-                      .read<PermissionBloc>()
-                      .add(RequestPermissionsEvent()),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _AppBar extends StatelessWidget {
   final AnimationController pulseController;
-  const _AppBar({required this.pulseController});
+  final VoidCallback onMenuTap;
+  const _AppBar({required this.pulseController, required this.onMenuTap});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
           AnimatedBuilder(
             animation: pulseController,
             builder: (_, __) => Container(
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 gradient: AppTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(11),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primaryColor
                         .withValues(alpha: 0.3 + pulseController.value * 0.2),
-                    blurRadius: 12 + pulseController.value * 8,
-                    spreadRadius: 1 + pulseController.value * 2,
+                    blurRadius: 10 + pulseController.value * 6,
+                    spreadRadius: 1 + pulseController.value * 1.5,
                   ),
                 ],
               ),
               child:
-                  const Icon(Icons.auto_awesome, color: Colors.white, size: 22)
+                  const Icon(Icons.auto_awesome, color: Colors.white, size: 18)
                       .animate(onPlay: (c) => c.repeat())
                       .shimmer(delay: 2000.ms, duration: 2000.ms)
                       .scale(
@@ -226,7 +246,7 @@ class _AppBar extends StatelessWidget {
                           curve: Curves.easeInOut),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +254,7 @@ class _AppBar extends StatelessWidget {
                 Text(
                   'SakoAI',
                   style: GoogleFonts.outfit(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
                     letterSpacing: 0.5,
@@ -252,7 +272,7 @@ class _AppBar extends StatelessWidget {
                     return Text(
                       statusText,
                       style: GoogleFonts.outfit(
-                        fontSize: 11,
+                        fontSize: 10,
                         color: state.status == AssistantStatus.idle
                             ? AppTheme.successColor
                             : AppTheme.accentColor,
@@ -264,16 +284,105 @@ class _AppBar extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              context.read<AssistantBloc>().add(RefreshAppsEvent());
-              context.read<AssistantBloc>().add(ClearChatHistoryEvent());
-            },
-            icon: const Icon(Icons.refresh_rounded, size: 22),
-            color: AppTheme.textSecondary,
-            tooltip: 'Refresh & Clear Chat',
-          ),
+          _MenuButton(onTap: onMenuTap),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _MenuButton({required this.onTap});
+
+  @override
+  State<_MenuButton> createState() => _MenuButtonState();
+}
+
+class _MenuButtonState extends State<_MenuButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _hoverCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _hoverCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hoverCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _hoverCtrl.forward(),
+      onTapUp: (_) {
+        _hoverCtrl.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _hoverCtrl.reverse(),
+      child: AnimatedBuilder(
+        animation: _hoverCtrl,
+        builder: (_, __) {
+          final scale = 1.0 - _hoverCtrl.value * 0.08;
+          return Transform.scale(
+            scale: scale,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppTheme.bgSurface,
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: AppTheme.primaryColor
+                      .withValues(alpha: 0.2 + _hoverCtrl.value * 0.3),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor
+                        .withValues(alpha: _hoverCtrl.value * 0.2),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _MenuLine(width: 16, color: AppTheme.textPrimary),
+                  const SizedBox(height: 3),
+                  _MenuLine(width: 12, color: AppTheme.primaryColor),
+                  const SizedBox(height: 3),
+                  _MenuLine(width: 8, color: AppTheme.accentColor),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.2);
+  }
+}
+
+class _MenuLine extends StatelessWidget {
+  final double width;
+  final Color color;
+  const _MenuLine({required this.width, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: 2.5,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
@@ -461,7 +570,7 @@ class _PermissionOverlay extends StatelessWidget {
                       color: AppTheme.primaryColor.withValues(alpha: 0.5),
                       width: 2),
                 ),
-                child: const Icon(Icons.mic_rounded,
+                child: Icon(Icons.mic_rounded,
                     color: AppTheme.primaryColor, size: 36),
               ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
               const SizedBox(height: 24),
@@ -537,16 +646,17 @@ class _BgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final bgPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF080818), Color(0xFF0D0D28), Color(0xFF080818)],
+      ..shader = LinearGradient(
+        colors: [AppTheme.bgDeep, AppTheme.bgCard, AppTheme.bgDeep],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
-    _drawOrb(canvas, size, Color(0xFF6C63FF), 0.2, 0.15, 200, t);
-    _drawOrb(canvas, size, Color(0xFF00D4FF), 0.8, 0.5, 150, 1 - t);
-    _drawOrb(canvas, size, Color(0xFF6C63FF), 0.5, 0.9, 100, t * 0.7);
+    final orbColors = AppTheme.orbColors;
+    _drawOrb(canvas, size, orbColors[0], 0.2, 0.15, 200, t);
+    _drawOrb(canvas, size, orbColors[1], 0.8, 0.5, 150, 1 - t);
+    _drawOrb(canvas, size, orbColors[2], 0.5, 0.9, 100, t * 0.7);
   }
 
   void _drawOrb(Canvas canvas, Size size, Color color, double xFrac,

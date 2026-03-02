@@ -1,34 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_themes.dart';
 
 class AppTheme {
   AppTheme._();
-  static const Color primaryColor = Color(0xFF6C63FF);
-  static const Color accentColor = Color(0xFF00D4FF);
-  static const Color successColor = Color(0xFF00E676);
-  static const Color errorColor = Color(0xFFFF5252);
-  static const Color warningColor = Color(0xFFFFD600);
 
-  static const Color bgDeep = Color(0xFF080818);
-  static const Color bgCard = Color(0xFF0F0F2A);
-  static const Color bgSurface = Color(0xFF161630);
-  static const Color bgElevated = Color(0xFF1E1E3F);
+  static AppThemeData _current = AppThemes.defaultDark;
 
-  static const Color textPrimary = Color(0xFFEEEEFF);
-  static const Color textSecondary = Color(0xFF9090BB);
-  static const Color textHint = Color(0xFF55557A);
+  static AppThemeData get current => _current;
 
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF6C63FF), Color(0xFF00D4FF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static void setCurrent(AppThemeData theme) {
+    _current = theme;
+  }
 
-  static const LinearGradient bgGradient = LinearGradient(
-    colors: [Color(0xFF080818), Color(0xFF0D0D28), Color(0xFF0A0A20)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
+  static Color get primaryColor => _current.primaryColor;
+  static Color get accentColor => _current.accentColor;
+  static Color get successColor => _current.successColor;
+  static Color get errorColor => _current.errorColor;
+  static Color get warningColor => _current.warningColor;
+
+  static Color get bgDeep => _current.bgDeep;
+  static Color get bgCard => _current.bgCard;
+  static Color get bgSurface => _current.bgSurface;
+  static Color get bgElevated => _current.bgElevated;
+
+  static Color get textPrimary => _current.textPrimary;
+  static Color get textSecondary => _current.textSecondary;
+  static Color get textHint => _current.textHint;
+
+  static LinearGradient get primaryGradient => _current.primaryGradient;
+  static LinearGradient get bgGradient => _current.bgGradient;
+  static List<Color> get orbColors => _current.orbColors;
+
   static ThemeData get darkTheme {
     final base = ThemeData.dark(useMaterial3: true);
     final textTheme = GoogleFonts.outfitTextTheme(base.textTheme).apply(
@@ -38,7 +41,7 @@ class AppTheme {
 
     return base.copyWith(
       scaffoldBackgroundColor: bgDeep,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: primaryColor,
         secondary: accentColor,
         surface: bgCard,
@@ -68,7 +71,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primaryColor, width: 1.5),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
         ),
         hintStyle: TextStyle(color: textHint, fontSize: 15),
         contentPadding:

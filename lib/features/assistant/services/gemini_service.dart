@@ -4,9 +4,24 @@ import '../../../../core/constants/api_constants.dart';
 import '../domain/entities/command_intent.dart';
 
 class GeminiService {
+  bool _isQuotaExhausted = false;
+
   GeminiService();
 
+  bool get isQuotaExhausted => _isQuotaExhausted;
+
+  void resetQuotaStatus() {
+    _isQuotaExhausted = false;
+  }
+
+  bool get hasValidApiKey {
+    final key = ApiConstants.geminiApiKey;
+    return key.isNotEmpty && key != 'YOUR_GEMINI_API_KEY_HERE';
+  }
+
   Future<CommandIntent?> detectIntentWithGemini(String command) async {
+    if (_isQuotaExhausted) return null;
+
     try {
       String apiKey = ApiConstants.geminiApiKey;
       if (apiKey == 'YOUR_GEMINI_API_KEY_HERE' || apiKey.isEmpty) return null;
@@ -80,15 +95,16 @@ User command: "$command"
             type: IntentType.multiCommand, rawText: command, subCommands: subs);
       }
 
+      _isQuotaExhausted = false;
       return CommandIntent.fromJson(json, command);
     } catch (e) {
       print('[GeminiService] Error: \$e');
-      if (e.toString().toLowerCase().contains('quota')) {
-        return CommandIntent(
-            type: IntentType.generalChat,
-            rawText: command,
-            replyText:
-                'আপনার Gemini API Key এর ফ্রি লিমিট (কোটা) শেষ হয়ে গেছে। দয়া করে Google AI Studio থেকে নতুন একটি API Key তৈরি করে অ্যাপে যুক্ত করুন।');
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('quota') ||
+          errorStr.contains('rate limit') ||
+          errorStr.contains('resource has been exhausted') ||
+          errorStr.contains('429')) {
+        _isQuotaExhausted = true;
       }
       return null;
     }
