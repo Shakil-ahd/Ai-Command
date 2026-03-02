@@ -3,10 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/theme/app_themes.dart';
-import '../../bloc/theme_bloc.dart';
-import '../../bloc/theme_event_state.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_themes.dart';
+import '../../features/assistant/bloc/theme_bloc.dart';
+import '../../features/assistant/bloc/theme_event_state.dart';
 
 class ThemeSelectionScreen extends StatelessWidget {
   const ThemeSelectionScreen({super.key});

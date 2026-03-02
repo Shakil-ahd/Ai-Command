@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../bloc/assistant_bloc.dart';
-import '../../bloc/assistant_event_state.dart';
-import '../../domain/entities/chat_message.dart';
-import '../../domain/entities/contact_info.dart';
+import '../../core/theme/app_theme.dart';
+import '../../features/assistant/bloc/assistant_bloc.dart';
+import '../../features/assistant/bloc/assistant_event_state.dart';
+import '../../features/assistant/domain/entities/chat_message.dart';
+import '../../features/assistant/domain/entities/contact_info.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ChatBubble extends StatefulWidget {

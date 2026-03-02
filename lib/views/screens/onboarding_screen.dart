@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/di/service_locator.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../domain/repositories/context_repository.dart';
+import '../../core/di/service_locator.dart';
+import '../../core/theme/app_theme.dart';
+import '../../features/assistant/domain/repositories/context_repository.dart';
 import 'assistant_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {

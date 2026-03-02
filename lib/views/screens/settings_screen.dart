@@ -3,11 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_theme.dart';
-import '../../bloc/assistant_bloc.dart';
-import '../../bloc/assistant_event_state.dart';
-import '../../bloc/theme_bloc.dart';
-import '../../bloc/theme_event_state.dart';
+import '../../core/theme/app_theme.dart';
+import '../../features/assistant/bloc/assistant_bloc.dart';
+import '../../features/assistant/bloc/assistant_event_state.dart';
+import '../../features/assistant/bloc/theme_bloc.dart';
+import '../../features/assistant/bloc/theme_event_state.dart';
 import 'theme_selection_screen.dart';
 
 class SettingsScreen extends StatelessWidget {

@@ -9,8 +9,8 @@ import 'features/assistant/bloc/permission_bloc.dart';
 import 'features/assistant/bloc/permission_event_state.dart';
 import 'features/assistant/bloc/theme_bloc.dart';
 import 'features/assistant/bloc/theme_event_state.dart';
-import 'features/assistant/ui/screens/assistant_screen.dart';
-import 'features/assistant/ui/screens/onboarding_screen.dart';
+import 'views/screens/assistant_screen.dart';
+import 'views/screens/onboarding_screen.dart';
 import 'features/assistant/domain/repositories/context_repository.dart';
 import 'core/theme/app_theme.dart';
 
