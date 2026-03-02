@@ -32,8 +32,13 @@ class AppTheme {
   static LinearGradient get bgGradient => _current.bgGradient;
   static List<Color> get orbColors => _current.orbColors;
 
+  static bool get isLightTheme => _current.id == 'pure_white';
+
   static ThemeData get darkTheme {
-    final base = ThemeData.dark(useMaterial3: true);
+    final isLight = isLightTheme;
+    final base = isLight
+        ? ThemeData.light(useMaterial3: true)
+        : ThemeData.dark(useMaterial3: true);
     final textTheme = GoogleFonts.outfitTextTheme(base.textTheme).apply(
       bodyColor: textPrimary,
       displayColor: textPrimary,
@@ -41,15 +46,25 @@ class AppTheme {
 
     return base.copyWith(
       scaffoldBackgroundColor: bgDeep,
-      colorScheme: ColorScheme.dark(
-        primary: primaryColor,
-        secondary: accentColor,
-        surface: bgCard,
-        error: errorColor,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: textPrimary,
-      ),
+      colorScheme: isLight
+          ? ColorScheme.light(
+              primary: primaryColor,
+              secondary: accentColor,
+              surface: bgCard,
+              error: errorColor,
+              onPrimary: Colors.white,
+              onSecondary: Colors.white,
+              onSurface: textPrimary,
+            )
+          : ColorScheme.dark(
+              primary: primaryColor,
+              secondary: accentColor,
+              surface: bgCard,
+              error: errorColor,
+              onPrimary: Colors.white,
+              onSecondary: Colors.white,
+              onSurface: textPrimary,
+            ),
       textTheme: textTheme,
       cardTheme: CardThemeData(
         color: bgCard,

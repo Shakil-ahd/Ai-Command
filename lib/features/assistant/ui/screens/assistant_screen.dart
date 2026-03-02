@@ -48,6 +48,10 @@ class _AssistantScreenState extends State<AssistantScreen>
 
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
+        final bloc = context.read<AssistantBloc>();
+        if (bloc.state.status == AssistantStatus.listening) {
+          bloc.add(VoiceRecordingStoppedEvent());
+        }
         Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
       }
     });
@@ -93,6 +97,10 @@ class _AssistantScreenState extends State<AssistantScreen>
                     _AppBar(
                       pulseController: _pulseController,
                       onMenuTap: () {
+                        final bloc = context.read<AssistantBloc>();
+                        if (bloc.state.status == AssistantStatus.listening) {
+                          bloc.add(VoiceRecordingStoppedEvent());
+                        }
                         _scaffoldKey.currentState?.openDrawer();
                       },
                     ),

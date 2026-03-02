@@ -58,6 +58,15 @@ class SakoAIApp extends StatelessWidget {
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, themeState) {
+          final isLight = AppTheme.isLightTheme;
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness:
+                isLight ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: AppTheme.bgDeep,
+            systemNavigationBarIconBrightness:
+                isLight ? Brightness.dark : Brightness.light,
+          ));
           return MaterialApp(
             title: 'SakoAI',
             debugShowCheckedModeBanner: false,

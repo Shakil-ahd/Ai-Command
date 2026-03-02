@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import '../domain/entities/chat_message.dart';
@@ -37,6 +38,22 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     on<ClearNotificationEvent>(_onClearNotification);
     on<ClearChatHistoryEvent>(_onClearChatHistory);
     on<DeleteMessageEvent>(_onDeleteMessage);
+  }
+
+  Timer? _silenceTimer;
+
+  void _startSilenceTimer() {
+    _cancelSilenceTimer();
+    _silenceTimer = Timer(const Duration(seconds: 5), () {
+      if (state.status == AssistantStatus.listening) {
+        add(VoiceRecordingStoppedEvent());
+      }
+    });
+  }
+
+  void _cancelSilenceTimer() {
+    _silenceTimer?.cancel();
+    _silenceTimer = null;
   }
 
   Future<void> _onInitialized(
@@ -87,6 +104,8 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
   ) async {
     final command = event.command.trim();
     if (command.isEmpty) return;
+
+    _cancelSilenceTimer();
 
     final userMsg = _makeUserMessage(command);
     final userMessages = [...state.messages, userMsg];
@@ -159,17 +178,21 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     }
 
     emit(state.copyWith(status: AssistantStatus.listening));
+    _startSilenceTimer();
 
     await speechService.startListening(
       localeId: '',
       onResult: (text, isFinal) {
         if (isFinal && text.isNotEmpty) {
+          _cancelSilenceTimer();
           add(CommandSubmittedEvent(text, isVoice: true));
         } else {
+          _startSilenceTimer();
           add(SpeechPartialResultEvent(text));
         }
       },
       onDone: () {
+        _cancelSilenceTimer();
         add(VoiceRecordingStoppedEvent());
       },
     );
@@ -179,6 +202,7 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
     VoiceRecordingStoppedEvent event,
     Emitter<AssistantState> emit,
   ) async {
+    _cancelSilenceTimer();
     await speechService.stopListening();
     if (state.status == AssistantStatus.listening) {
       emit(state.copyWith(status: AssistantStatus.idle, clearPartial: true));

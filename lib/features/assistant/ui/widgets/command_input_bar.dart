@@ -75,6 +75,7 @@ class CommandInputBar extends StatelessWidget {
                         color: AppTheme.textPrimary,
                       ),
                       decoration: InputDecoration(
+                        filled: false,
                         hintText:
                             isListening ? 'Listening…' : 'Type a command…',
                         hintStyle: GoogleFonts.outfit(
@@ -84,9 +85,11 @@ class CommandInputBar extends StatelessWidget {
                           fontStyle: FontStyle.italic,
                         ),
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 12,
+                          vertical: 1,
                         ),
                       ),
                     ),

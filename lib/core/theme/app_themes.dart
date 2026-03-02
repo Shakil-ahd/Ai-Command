@@ -45,6 +45,7 @@ class AppThemeData {
 class AppThemes {
   static const List<AppThemeData> allThemes = [
     defaultDark,
+    pureWhite,
     moonrise,
     oceanWave,
     midnight,
@@ -464,6 +465,35 @@ class AppThemes {
       end: Alignment.bottomCenter,
     ),
     orbColors: [Color(0xFFFFD700), Color(0xFFFFB300), Color(0xFFFFC107)],
+  );
+
+  static const pureWhite = AppThemeData(
+    id: 'pure_white',
+    name: 'Clean White',
+    emoji: '☀️',
+    primaryColor: Color(0xFF4A6CF7),
+    accentColor: Color(0xFF6C63FF),
+    successColor: Color(0xFF22C55E),
+    errorColor: Color(0xFFEF4444),
+    warningColor: Color(0xFFF59E0B),
+    bgDeep: Color(0xFFF5F7FA),
+    bgCard: Color(0xFFFFFFFF),
+    bgSurface: Color(0xFFF0F2F5),
+    bgElevated: Color(0xFFE8EBF0),
+    textPrimary: Color(0xFF1A1D26),
+    textSecondary: Color(0xFF5A6070),
+    textHint: Color(0xFF9AA0B0),
+    primaryGradient: LinearGradient(
+      colors: [Color(0xFF4A6CF7), Color(0xFF6C63FF)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    bgGradient: LinearGradient(
+      colors: [Color(0xFFF5F7FA), Color(0xFFFFFFFF), Color(0xFFF5F7FA)],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ),
+    orbColors: [Color(0xFF4A6CF7), Color(0xFF6C63FF), Color(0xFF818CF8)],
   );
 
   static AppThemeData getThemeById(String id) {
