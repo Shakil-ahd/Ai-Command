@@ -7,6 +7,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_themes.dart';
 import '../../features/assistant/bloc/theme_bloc.dart';
 import '../../features/assistant/bloc/theme_event_state.dart';
+import '../../features/assistant/bloc/connectivity_bloc.dart';
+import '../../features/assistant/bloc/connectivity_event_state.dart';
+import '../widgets/shimmer_loading.dart';
 
 class ThemeSelectionScreen extends StatelessWidget {
   const ThemeSelectionScreen({super.key});
@@ -78,39 +81,53 @@ class ThemeSelectionScreen extends StatelessWidget {
                   ).animate().fadeIn(),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.82,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final theme = AppThemes.allThemes[index];
-                      final isSelected = theme.id == themeState.currentTheme.id;
-                      return _ThemeCard(
-                        theme: theme,
-                        isSelected: isSelected,
-                        onTap: () {
-                          context
-                              .read<ThemeBloc>()
-                              .add(ThemeChangedEvent(theme.id));
+              BlocBuilder<ConnectivityBloc, ConnectivityState>(
+                builder: (context, connState) {
+                  if (!connState.isConnected) {
+                    return SliverFillRemaining(
+                      child: ShimmerLoading(
+                        itemCount: AppThemes.allThemes.length,
+                        type: ShimmerType.grid,
+                      ),
+                    );
+                  }
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.82,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final theme = AppThemes.allThemes[index];
+                          final isSelected =
+                              theme.id == themeState.currentTheme.id;
+                          return _ThemeCard(
+                            theme: theme,
+                            isSelected: isSelected,
+                            onTap: () {
+                              context
+                                  .read<ThemeBloc>()
+                                  .add(ThemeChangedEvent(theme.id));
+                            },
+                          )
+                              .animate()
+                              .fadeIn(delay: Duration(milliseconds: 50 * index))
+                              .scale(
+                                begin: const Offset(0.9, 0.9),
+                                end: const Offset(1, 1),
+                                delay: Duration(milliseconds: 50 * index),
+                              );
                         },
-                      )
-                          .animate()
-                          .fadeIn(delay: Duration(milliseconds: 50 * index))
-                          .scale(
-                            begin: const Offset(0.9, 0.9),
-                            end: const Offset(1, 1),
-                            delay: Duration(milliseconds: 50 * index),
-                          );
-                    },
-                    childCount: AppThemes.allThemes.length,
-                  ),
-                ),
+                        childCount: AppThemes.allThemes.length,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SliverPadding(padding: EdgeInsets.only(bottom: 30)),
             ],

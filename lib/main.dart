@@ -7,6 +7,7 @@ import 'features/assistant/bloc/assistant_bloc.dart';
 import 'features/assistant/bloc/assistant_event_state.dart';
 import 'features/assistant/bloc/permission_bloc.dart';
 import 'features/assistant/bloc/permission_event_state.dart';
+import 'features/assistant/bloc/connectivity_bloc.dart';
 import 'features/assistant/bloc/theme_bloc.dart';
 import 'features/assistant/bloc/theme_event_state.dart';
 import 'views/screens/assistant_screen.dart';
@@ -54,6 +55,9 @@ class SakoAIApp extends StatelessWidget {
         ),
         BlocProvider<AssistantBloc>(
           create: (_) => sl<AssistantBloc>()..add(AssistantInitializedEvent()),
+        ),
+        BlocProvider<ConnectivityBloc>(
+          create: (_) => sl<ConnectivityBloc>(),
         ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(

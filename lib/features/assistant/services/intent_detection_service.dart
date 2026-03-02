@@ -1,4 +1,5 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'dart:io';
 import '../domain/entities/app_info.dart';
 import '../domain/entities/command_intent.dart';
 import 'gemini_service.dart';
@@ -221,8 +222,7 @@ class IntentDetectionService {
     final banglaIntent = _detectBanglaIntent(text);
     if (banglaIntent != null) return banglaIntent;
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    final hasInternet = await _hasRealInternet();
 
     if (hasInternet && !geminiService.isQuotaExhausted) {
       final geminiIntent = await geminiService.detectIntentWithGemini(text);
@@ -241,12 +241,15 @@ class IntentDetectionService {
     }
 
     if (!hasInternet) {
-      return CommandIntent(
-        type: IntentType.generalChat,
-        rawText: text,
-        replyText:
-            '📵 ইন্টারনেট সংযোগ নেই। তবে আমি অফলাইনেও অ্যাপ খোলা, কল করা, ফ্ল্যাশলাইট, ওয়াইফাই, ব্লুটুথ ইত্যাদি নিয়ন্ত্রণ করতে পারি!\n\nNo internet connection. But I can still open apps, make calls, and control flashlight, WiFi, Bluetooth offline!',
-      );
+      final requiresInternet = _requiresInternet(localIntent.type);
+      if (requiresInternet) {
+        return CommandIntent(
+          type: IntentType.noInternet,
+          rawText: text,
+          replyText:
+              'No internet connection. Please connect to Wi-Fi or Mobile Data to process this command.',
+        );
+      }
     }
 
     if (geminiService.isQuotaExhausted) {
@@ -262,6 +265,47 @@ class IntentDetectionService {
     }
 
     return CommandIntent(type: IntentType.unknown, rawText: text);
+  }
+
+  Future<bool> _hasRealInternet() async {
+    try {
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 3);
+      final request = await client
+          .headUrl(Uri.parse('https://www.google.com'))
+          .timeout(const Duration(seconds: 4));
+      final response =
+          await request.close().timeout(const Duration(seconds: 4));
+      client.close(force: true);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool _requiresInternet(IntentType type) {
+    switch (type) {
+      case IntentType.openUrl:
+      case IntentType.youtubeSearch:
+      case IntentType.generalChat:
+        return true;
+      case IntentType.openApp:
+      case IntentType.makeCall:
+      case IntentType.turnOnFlashlight:
+      case IntentType.turnOffFlashlight:
+      case IntentType.turnOnWifi:
+      case IntentType.turnOffWifi:
+      case IntentType.turnOnBluetooth:
+      case IntentType.turnOffBluetooth:
+      case IntentType.openSettings:
+      case IntentType.openCamera:
+      case IntentType.clearChat:
+      case IntentType.reopen:
+      case IntentType.multiCommand:
+      case IntentType.unknown:
+      case IntentType.noInternet:
+        return false;
+    }
   }
 
   CommandIntent? _detectBanglishIntent(String text) {

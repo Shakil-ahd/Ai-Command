@@ -10,6 +10,7 @@ import '../services/tts_service.dart';
 import 'assistant_event_state.dart';
 import '../domain/entities/contact_info.dart';
 import '../../../../core/utils/result.dart';
+import 'connectivity_bloc.dart';
 
 class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
   final ProcessCommandUseCase processCommandUseCase;
@@ -115,6 +116,17 @@ class AssistantBloc extends Bloc<AssistantEvent, AssistantState> {
       clearPartial: true,
     ));
     await contextRepository.saveMessages(userMessages);
+
+    final hasInternet = await ConnectivityBloc.checkNow();
+    if (!hasInternet) {
+      emit(state.copyWith(
+        status: AssistantStatus.error,
+        errorMessage: 'no_internet',
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+      emit(state.copyWith(status: AssistantStatus.idle, clearError: true));
+      return;
+    }
 
     try {
       final response = await processCommandUseCase(command);

@@ -120,6 +120,10 @@ class ProcessCommandUseCase {
         return CommandResponse.success(
             intent.replyText ?? 'Hello! I am SakoAI.');
 
+      case IntentType.noInternet:
+        return CommandResponse.error(
+            intent.replyText ?? 'No internet connection.');
+
       case IntentType.unknown:
         return CommandResponse.error('Sorry, I didn\'t understand that.');
     }

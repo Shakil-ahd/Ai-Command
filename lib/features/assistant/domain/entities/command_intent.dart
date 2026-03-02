@@ -76,5 +76,6 @@ enum IntentType {
   openCamera,
   generalChat,
   clearChat,
+  noInternet,
   unknown,
 }

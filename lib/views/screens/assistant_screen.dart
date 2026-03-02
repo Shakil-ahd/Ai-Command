@@ -11,10 +11,13 @@ import '../../features/assistant/bloc/permission_event_state.dart';
 import '../../features/assistant/bloc/theme_bloc.dart';
 import '../../features/assistant/bloc/theme_event_state.dart';
 import '../../features/assistant/domain/entities/chat_message.dart';
+import '../../features/assistant/bloc/connectivity_bloc.dart';
+import '../../features/assistant/bloc/connectivity_event_state.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/command_input_bar.dart';
 import '../widgets/listening_indicator.dart';
 import '../widgets/menu_drawer.dart';
+import '../widgets/connectivity_dialog.dart';
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -108,6 +111,10 @@ class _AssistantScreenState extends State<AssistantScreen>
                       child: BlocConsumer<AssistantBloc, AssistantState>(
                         listener: (ctx, state) {
                           _scrollToBottom();
+                          if (state.status == AssistantStatus.error &&
+                              state.errorMessage == 'no_internet') {
+                            ConnectivityDialog.show(ctx);
+                          }
                           if (state.notificationMessage != null) {
                             ScaffoldMessenger.of(ctx).showSnackBar(
                               SnackBar(
@@ -268,24 +275,38 @@ class _AppBar extends StatelessWidget {
                     letterSpacing: 0.5,
                   ),
                 ),
-                BlocBuilder<AssistantBloc, AssistantState>(
-                  builder: (ctx, state) {
-                    final statusText = switch (state.status) {
-                      AssistantStatus.idle => '● Online',
-                      AssistantStatus.listening => '🎙️ Listening…',
-                      AssistantStatus.processing => '⚙️ Processing…',
-                      AssistantStatus.loading => '⏳ Loading…',
-                      AssistantStatus.error => '⚠️ Error',
-                    };
-                    return Text(
-                      statusText,
-                      style: GoogleFonts.outfit(
-                        fontSize: 10,
-                        color: state.status == AssistantStatus.idle
-                            ? AppTheme.successColor
-                            : AppTheme.accentColor,
-                        fontWeight: FontWeight.w500,
-                      ),
+                BlocBuilder<ConnectivityBloc, ConnectivityState>(
+                  builder: (ctx, connState) {
+                    return BlocBuilder<AssistantBloc, AssistantState>(
+                      builder: (ctx, state) {
+                        String statusText;
+                        Color statusColor;
+
+                        if (!connState.isConnected) {
+                          statusText = '● Offline';
+                          statusColor = AppTheme.errorColor;
+                        } else {
+                          statusText = switch (state.status) {
+                            AssistantStatus.idle => '● Online',
+                            AssistantStatus.listening => '🎙️ Listening…',
+                            AssistantStatus.processing => '⚙️ Processing…',
+                            AssistantStatus.loading => '⏳ Loading…',
+                            AssistantStatus.error => '⚠️ Error',
+                          };
+                          statusColor = state.status == AssistantStatus.idle
+                              ? AppTheme.successColor
+                              : AppTheme.accentColor;
+                        }
+
+                        return Text(
+                          statusText,
+                          style: GoogleFonts.outfit(
+                            fontSize: 10,
+                            color: statusColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
