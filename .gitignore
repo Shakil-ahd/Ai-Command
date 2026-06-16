@@ -44,5 +44,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Ignore API Keys
+# Ignore API Keys & Environment Variables
 lib/core/constants/api_constants.dart
+.env
+.env.local
+.env.*.local

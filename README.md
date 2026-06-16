@@ -119,9 +119,14 @@ Developed with ❤️ by **Shakil Ahmed** from Bangladesh.
    flutter pub get
    ```
 
-3. **Configure Google Gemini API**
+3. **Configure Google Gemini API** 🔐
    - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Update the API key in the configuration
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and replace `YOUR_GEMINI_API_KEY_HERE` with your actual API key
+   - **⚠️ IMPORTANT: Never commit `.env` to git!** (It's already in `.gitignore`)
 
 4. **Build the App**
 
@@ -285,7 +290,42 @@ Simply type your command in the input bar if voice isn't available or you prefer
 
 ---
 
-## 📱 Supported Devices
+## � Security & API Key Management
+
+### Environment Variables
+
+This app uses **environment variables** to securely manage API keys. Never commit sensitive information to git!
+
+**Setup:**
+
+1. Copy `.env.example` to `.env`:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your API key to `.env`:
+
+   ```env
+   GEMINI_API_KEY=your_key_here
+   ```
+
+3. `.env` is automatically ignored by git (see `.gitignore`)
+
+### Best Practices
+
+- ✅ Use `.env` for local development
+- ✅ Use CI/CD secrets for production
+- ✅ Rotate API keys regularly
+- ✅ Restrict API keys in Google Cloud Console
+- ❌ Never hardcode API keys
+- ❌ Never commit `.env` to git
+
+**See [SECURITY.md](SECURITY.md) for detailed security guidelines.**
+
+---
+
+## �📱 Supported Devices
 
 - **Minimum SDK**: Android 21 (Android 5.0)
 - **Target SDK**: Android 34+
